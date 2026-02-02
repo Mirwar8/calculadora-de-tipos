@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-display text-slate-900 dark:text-white bg-background-light dark:bg-background-dark;
+  }
+}
+
+@layer components {
+  .matrix-cell {
+    @apply min-w-11 h-11 flex items-center justify-center text-xs font-bold transition-colors;
+  }
+
+  .type-badge {
+    @apply px-2 py-0.5 rounded text-[0.65rem] uppercase font-bold text-white shadow-sm;
+  }
+
+  .type-icon {
+    @apply size-7 rounded-sm flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 uppercase;
+  }
+
+  .offensive-badge-x2 {
+    @apply size-7 rounded-full bg-green-500/90 flex items-center justify-center text-white font-bold text-[10px] shadow-sm;
+  }
+
+  .offensive-badge-x4 {
+    @apply size-7 rounded-full bg-orange-600 flex items-center justify-center text-white font-bold text-[10px] border border-orange-400/30 shadow-sm;
+  }
+
+  .matrix-header-cell {
+    @apply p-2 border-r border-slate-200 dark:border-[#233648] last:border-r-0;
+  }
+}
+
+.zebra-table tbody tr:nth-child(even) {
+  @apply bg-slate-50 dark:bg-[#101922];
+}
+
+/* Custom scrollbar for matrix and dropdowns */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #333333;
+}
