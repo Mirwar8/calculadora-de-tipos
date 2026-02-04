@@ -91,6 +91,34 @@ export const fetchPokemonDetails = async (url) => {
   }
 };
 
+export const fetchPokemonSpecies = async (idOrName) => {
+  try {
+    const response = await fetch(`${BASE_URL}/pokemon-species/${idOrName}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching pokemon species:", error);
+    return null;
+  }
+};
+
+export const fetchPokemonFullDetails = async (idOrName) => {
+  try {
+    const [pokemon, species] = await Promise.all([
+      fetch(`${BASE_URL}/pokemon/${idOrName}`).then(res => res.json()),
+      fetchPokemonSpecies(idOrName)
+    ]);
+
+    return {
+      ...pokemon,
+      speciesData: species
+    };
+  } catch (error) {
+    console.error("Error fetching full pokemon details:", error);
+    return null;
+  }
+};
+
 
 export const searchPokemon = async (query) => {
     // 1. Try searching by Species first to get all varieties (gender differences, forms)

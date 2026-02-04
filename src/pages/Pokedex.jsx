@@ -489,7 +489,10 @@ const Pokedex = () => {
                                 <span className="material-symbols-outlined">favorite</span>
                             </button>
                         </div>
-                        <div className="aspect-square bg-slate-50 dark:bg-[#233648] rounded-2xl mb-4 flex items-center justify-center overflow-hidden p-4 group-hover:scale-105 transition-transform duration-300">
+                        <div
+                            onClick={() => navigate(`/pokemon/${pokemon.id.toString().includes('-f') ? pokemon.id.split('-')[0] : pokemon.id}`)}
+                            className="aspect-square bg-slate-50 dark:bg-[#233648] rounded-2xl mb-4 flex items-center justify-center overflow-hidden p-4 group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                        >
                             <img alt={pokemon.name} className="w-full h-full object-contain" src={pokemon.image} />
                         </div>
                         <div className="text-center mb-4">
