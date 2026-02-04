@@ -143,11 +143,11 @@ const PokemonDetail = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-8 font-sans">
-            <main className="relative w-full max-w-[1000px] mx-auto bg-pokedex-blue-dark rounded-3xl p-6 md:p-10 shadow-bevel border-4 border-black/20">
+        <div className="mx-auto p-2 sm:p-4 md:p-6 lg:p-8 font-sans overflow-safe" style={{ maxWidth: 'clamp(100vw, 90vw, 1400px)' }}>
+            <main className="relative w-full mx-auto bg-pokedex-blue-dark rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 shadow-bevel border-4 border-black/20 overflow-safe" style={{ maxWidth: 'min(calc(100vw - 4rem), 1200px)' }}>
                 {/* Top Sensor Array & Header */}
-                <header className="flex items-start justify-between mb-8 relative z-10">
-                    <div className="flex items-center gap-4">
+                <header className="flex items-start justify-between mb-6 sm:mb-8 relative z-10">
+                    <div className="flex items-center space-fluid-4">
                         <div className="size-16 md:size-20 rounded-full bg-blue-400 border-4 border-white/20 shadow-lg relative overflow-hidden lens-reflection animate-pulse">
                             <div className="absolute inset-0 bg-gradient-to-br from-blue-300 to-blue-600 opacity-80"></div>
                         </div>
@@ -160,33 +160,33 @@ const PokemonDetail = () => {
                     <div className="flex flex-col items-end gap-2">
                         <button
                             onClick={() => navigate('/pokedex')}
-                            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors group"
+                            className="flex items-center space-fluid-2 text-white/80 hover:text-white transition-colors group touch-target"
                         >
                             <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-                            <span className="text-base md:text-lg font-bold tracking-widest uppercase">Pokedex</span>
+                            <span className="text-fluid-base md:text-fluid-lg font-bold tracking-widest uppercase">Pokedex</span>
                         </button>
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
                     {/* LEFT COLUMN */}
-                    <div className="lg:col-span-7 flex flex-col gap-6">
-                        <div className="bg-white dark:bg-slate-300 p-6 rounded-bl-[4rem] rounded-tl-xl rounded-tr-xl rounded-br-xl shadow-inner-heavy relative">
+                    <div className="lg:col-span-7 flex flex-col space-fluid-6">
+                        <div className="bg-white dark:bg-slate-300 p-4 sm:p-6 rounded-bl-[4rem] rounded-tl-xl rounded-tr-xl rounded-br-xl shadow-inner-heavy relative overflow-safe">
                             <div className="bg-dex-dark-screen rounded-lg p-1 shadow-lg ring-4 ring-gray-400/50">
                                 <div className="bg-gray-900 rounded border-2 border-gray-700 relative overflow-hidden aspect-[4/3] flex items-center justify-center">
                                     <div className="absolute inset-0 scanlines opacity-20 pointer-events-none z-10"></div>
                                     <img
                                         src={getSprite()}
                                         alt={pokemon.name}
-                                        className="w-3/4 h-3/4 object-contain transition-transform duration-500 hover:scale-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] pixelated"
+                                        className="w-3/4 h-3/4 object-contain transition-transform duration-500 hover:scale-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] pixelated aspect-sprite"
                                     />
                                     <div className="absolute top-4 left-4 z-20">
-                                        <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">REC</span>
+                                        <span className="bg-red-600 text-white text-fluid-xs font-bold px-2 py-0.5 rounded shadow">REC</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center justify-between mt-4 px-2">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center space-fluid-3">
                                     <div className="size-6 md:size-8 rounded-full bg-red-600 shadow-md animate-pulse"></div>
                                     <div className="h-1 w-8 md:w-12 bg-gray-400 rounded-full"></div>
                                     <div className="h-1 w-8 md:w-12 bg-gray-400 rounded-full"></div>
@@ -197,8 +197,8 @@ const PokemonDetail = () => {
 
                         <div className="bg-black/30 rounded-xl p-4 flex flex-wrap items-center justify-between border-2 border-white/10 shadow-bevel-pressed">
                             <div>
-                                <h1 className="text-2xl md:text-4xl font-bold text-white tracking-tight capitalize">{pokemon.name}</h1>
-                                <p className="text-blue-200 font-mono text-base md:text-lg tracking-widest">#{String(pokemon.id).padStart(3, '0')}</p>
+                                <h1 className="text-fluid-2xl md:text-fluid-4xl font-bold text-white tracking-tight capitalize">{pokemon.name}</h1>
+                                <p className="text-blue-200 font-mono text-fluid-base md:text-fluid-lg tracking-widest">#{String(pokemon.id).padStart(3, '0')}</p>
                             </div>
                             <div className="flex gap-2">
                                 {pokemon.types.map(t => (
@@ -209,16 +209,16 @@ const PokemonDetail = () => {
                     </div>
 
                     {/* RIGHT COLUMN */}
-                    <div className="lg:col-span-5 flex flex-col gap-6">
+                    <div className="lg:col-span-5 flex flex-col space-fluid-6">
                         {/* LCD Panel */}
-                        <div className="bg-black/40 rounded-xl p-1 shadow-bevel-pressed ring-1 ring-white/10">
+                        <div className="bg-black/40 rounded-xl p-1 shadow-bevel-pressed ring-1 ring-white/10 overflow-safe">
                             <div className="bg-[#101820] rounded-lg p-4 border border-gray-700 min-h-[160px] relative overflow-hidden">
                                 <div className="absolute inset-0 scanlines opacity-10 pointer-events-none"></div>
-                                <p className="text-green-400 font-mono text-sm md:text-base leading-relaxed">
-                                    <span className="opacity-70 text-[10px] block mb-2 border-b border-green-900 pb-1 uppercase tracking-tighter flex justify-between items-center">
+                                <p className="text-green-400 font-mono text-fluid-sm md:text-fluid-base leading-relaxed">
+                                    <span className="opacity-70 text-fluid-xs block mb-2 border-b border-green-900 pb-1 uppercase tracking-tighter flex justify-between items-center">
                                         <span>:: Pokedex Entry _{selectedVersion}</span>
                                         {!getDescriptionData().isAvailable && (
-                                            <span className="text-[8px] bg-yellow-600/20 px-1 rounded animate-pulse text-yellow-500">
+                                            <span className="text-fluid-xs bg-yellow-600/20 px-1 rounded animate-pulse text-yellow-500">
                                                 [Language Unavailable - Fallback to English]
                                             </span>
                                         )}
@@ -230,21 +230,21 @@ const PokemonDetail = () => {
                         </div>
 
                         {/* Stats Panel */}
-                        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-                            <h3 className="text-white text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 sm:p-5 border border-white/10 shadow-lg overflow-safe">
+                            <h3 className="text-white text-fluid-xs font-bold uppercase tracking-wider mb-4 flex items-center space-fluid-2">
                                 <span className="material-symbols-outlined text-sm">bar_chart</span> Base Stats
                             </h3>
                             <div className="space-y-3">
                                 {pokemon.stats.map(s => (
                                     <div key={s.stat.name} className="grid grid-cols-[3rem_1fr_2rem] gap-3 items-center">
-                                        <span className="text-blue-200 text-[10px] font-bold uppercase">{statsMap[s.stat.name]?.label || s.stat.name}</span>
+                                        <span className="text-blue-200 text-fluid-xs font-bold uppercase">{statsMap[s.stat.name]?.label || s.stat.name}</span>
                                         <div className="h-2.5 bg-black/30 rounded-full overflow-hidden shadow-inner">
                                             <div
                                                 className={`h-full ${statsMap[s.stat.name]?.color || 'bg-primary'} rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)] transition-all duration-1000`}
                                                 style={{ width: `${Math.min(100, (s.base_stat / 255) * 100)}%` }}
                                             ></div>
                                         </div>
-                                        <span className="text-white text-[10px] text-right font-mono">{s.base_stat}</span>
+                                        <span className="text-white text-fluid-xs text-right font-mono">{s.base_stat}</span>
                                     </div>
                                 ))}
                             </div>
@@ -252,26 +252,26 @@ const PokemonDetail = () => {
 
                         {/* Control Deck */}
                         <div className="grid grid-cols-2 gap-4 mt-auto">
-                            <div className="bg-black/20 p-1.5 rounded-lg flex items-center gap-1 shadow-bevel-pressed">
+                            <div className="bg-black/20 p-1.5 rounded-lg flex items-center gap-1 shadow-bevel-pressed overflow-safe">
                                 <button
                                     onClick={() => setLanguage('en')}
-                                    className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all ${language === 'en' ? 'bg-primary text-white shadow-md' : 'text-blue-300'}`}
+                                    className={`flex-1 py-1.5 rounded text-fluid-xs font-bold transition-all touch-target ${language === 'en' ? 'bg-primary text-white shadow-md' : 'text-blue-300'}`}
                                 >
                                     ENG
                                 </button>
                                 <button
                                     onClick={() => setLanguage('es')}
-                                    className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all ${language === 'es' ? 'bg-primary text-white shadow-md' : 'text-blue-300'}`}
+                                    className={`flex-1 py-1.5 rounded text-fluid-xs font-bold transition-all touch-target ${language === 'es' ? 'bg-primary text-white shadow-md' : 'text-blue-300'}`}
                                 >
                                     ESP
                                 </button>
                             </div>
 
-                            <div className="relative">
+                            <div className="relative overflow-safe">
                                 <select
                                     value={selectedVersion}
                                     onChange={(e) => setSelectedVersion(e.target.value)}
-                                    className="w-full appearance-none bg-black/40 border border-white/10 text-white text-[10px] font-bold py-2 px-3 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 capitalize"
+                                    className="w-full appearance-none bg-black/40 border border-white/10 text-white text-fluid-xs font-bold py-2 px-3 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 capitalize touch-target"
                                 >
                                     {getVersions().map(v => (
                                         <option key={v} value={v} className="bg-pokedex-blue-dark">{v.replace(/-/g, ' ')}</option>
@@ -285,7 +285,7 @@ const PokemonDetail = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 flex justify-center gap-3 opacity-30">
+                <div className="mt-6 sm:mt-8 flex justify-center space-fluid-3 opacity-30">
                     <div className="w-12 h-2 bg-black/50 rounded-full"></div>
                     <div className="w-12 h-2 bg-black/50 rounded-full"></div>
                     <div className="w-12 h-2 bg-black/50 rounded-full"></div>

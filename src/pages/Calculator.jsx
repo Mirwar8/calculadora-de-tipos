@@ -29,9 +29,9 @@ const Calculator = () => {
 
     return (
         <div className="max-w-5xl mx-auto space-y-10">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-4xl font-black tracking-tight dark:text-white">Type Coverage Calculator</h1>
-                <p className="text-slate-500 dark:text-[#92adc9] text-lg max-w-2xl">
+            <div className="flex flex-col space-fluid-4">
+                <h1 className="text-fluid-4xl font-black tracking-tight dark:text-white">Type Coverage Calculator</h1>
+                <p className="text-slate-500 dark:text-[#92adc9] text-fluid-lg max-w-2xl">
                     Instantly analyze weaknesses, resistances, and immunities for any type combination.
                 </p>
             </div>
@@ -55,21 +55,21 @@ const Calculator = () => {
                 type2={type2}
             />
 
-            <section className="mt-12 mb-10">
-                <div className="bg-slate-50 dark:bg-[#1a2632] border-2 border-dashed border-slate-200 dark:border-[#233648] rounded-[2.5rem] p-10 text-center">
-                    <div className="max-w-xl mx-auto space-y-6">
+            <section className="mt-8 sm:mt-10 lg:mt-12 mb-8 sm:mb-10">
+                <div className="bg-slate-50 dark:bg-[#1a2632] border-2 border-dashed border-slate-200 dark:border-[#233648] rounded-[2.5rem] p-6 sm:p-8 lg:p-10 text-center overflow-safe">
+                    <div className="max-w-xl mx-auto space-fluid-6">
                         <div className="flex justify-center">
                             <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center">
                                 <span className="material-symbols-outlined text-primary text-4xl">search_insights</span>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <h2 className="text-3xl font-black tracking-tight dark:text-white">Discover Existing Pokémon</h2>
+                        <div className="space-fluid-4">
+                            <h2 className="text-fluid-3xl font-black tracking-tight dark:text-white">Discover Existing Pokémon</h2>
                             <p className="text-slate-500 dark:text-[#92adc9]">Interested in seeing which Pokémon actually possess this specific type combination? Explore our database for matches and detailed stats.</p>
                         </div>
                         <Link
                             to={`/pokedex?type1=${type1}&type2=${type2}`}
-                            className="group relative inline-flex items-center gap-3 bg-white dark:bg-[#233648] text-slate-900 dark:text-white px-10 py-5 rounded-full font-black text-lg border-2 border-slate-200 dark:border-[#324d67] hover:border-primary dark:hover:border-primary transition-all shadow-lg hover:shadow-primary/10"
+                            className="group relative inline-flex items-center space-fluid-3 bg-white dark:bg-[#233648] text-slate-900 dark:text-white px-8 sm:px-10 py-4 sm:py-5 rounded-full font-black text-lg border-2 border-slate-200 dark:border-[#324d67] hover:border-primary dark:hover:border-primary transition-all shadow-lg hover:shadow-primary/10 touch-target"
                         >
                             <span className="material-symbols-outlined text-primary">capture</span>
                             View Pokémon with this Type Combination

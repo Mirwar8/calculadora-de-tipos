@@ -37,6 +37,13 @@ export default {
         "lg": "2rem",
         "xl": "3rem"
       },
+      screens: {
+        '3xl': '1600px',
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+      },
     },
   },
   plugins: [],

@@ -295,11 +295,11 @@ const Pokedex = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8">
-            <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-4xl font-black tracking-tight dark:text-white">Pokédex Explorer</h1>
-                    <p className="text-slate-500 dark:text-[#92adc9] text-lg max-w-2xl">
+        <div className="w-full space-y-6 md:space-y-8">
+            <div className="flex flex-col space-fluid-6">
+                <div className="flex flex-col space-fluid-4">
+                    <h1 className="text-fluid-3xl md:text-fluid-4xl lg:text-fluid-5xl font-black tracking-tight dark:text-white">Pokédex Explorer</h1>
+                    <p className="text-slate-500 dark:text-[#92adc9] text-fluid-base md:text-fluid-lg lg:text-fluid-xl max-w-2xl lg:max-w-3xl">
                         {isFiltering
                             ? `Showing Pokémon with type: ${type1Filter} ${type2Filter && type2Filter !== 'none' ? `+ ${type2Filter}` : ''}`
                             : "Browse through the national Pokédex and analyze any Pokémon's defensive profile."
@@ -308,8 +308,8 @@ const Pokedex = () => {
                 </div>
 
                 <div className="relative">
-                    <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-4 bg-white dark:bg-[#1a2632] p-4 rounded-2xl border border-slate-200 dark:border-[#233648]">
-                        <div className="flex-1 min-w-[240px]">
+                    <form onSubmit={handleSearch} className="flex flex-wrap items-center space-fluid-4 bg-white dark:bg-[#1a2632] p-3 md:p-4 rounded-2xl border border-slate-200 dark:border-[#233648] overflow-safe">
+                        <div className="flex-1 min-w-[240px] flex-zoom-safe">
                             <div className="relative">
                                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                                 <input
@@ -321,7 +321,7 @@ const Pokedex = () => {
                                             navigate('/pokedex');
                                         }
                                     }}
-                                    className="w-full bg-slate-50 dark:bg-[#233648] border-none rounded-xl py-3 pl-10 text-sm focus:ring-2 focus:ring-primary outline-none dark:text-white"
+                                    className="w-full bg-slate-50 dark:bg-[#233648] border-none rounded-xl py-3 pl-10 text-fluid-sm focus:ring-2 focus:ring-primary outline-none dark:text-white"
                                     placeholder="Search by name or number..."
                                     type="text"
                                 />
@@ -334,7 +334,7 @@ const Pokedex = () => {
                             onChange={(e) => {
                                 setPageSize(Number(e.target.value));
                             }}
-                            className="bg-slate-100 dark:bg-[#233648] border border-slate-200 dark:border-[#2a3f52] rounded-xl px-4 py-3 text-sm font-bold dark:text-white focus:ring-2 focus:ring-primary outline-none"
+                            className="bg-slate-100 dark:bg-[#233648] border border-slate-200 dark:border-[#2a3f52] rounded-xl px-4 py-3 text-fluid-sm font-bold dark:text-white focus:ring-2 focus:ring-primary outline-none"
                         >
                             <option value={25}>25 per page</option>
                             <option value={50}>50 per page</option>
@@ -345,7 +345,7 @@ const Pokedex = () => {
                         <button
                             type="button"
                             onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-colors"
+                            className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-fluid-sm flex items-center gap-2 hover:bg-primary/90 transition-colors touch-target"
                         >
                             <span className="material-symbols-outlined">filter_list</span>
                             Filters
@@ -354,7 +354,7 @@ const Pokedex = () => {
                             <button
                                 type="button"
                                 onClick={clearAllFilters}
-                                className="text-slate-500 dark:text-slate-400 text-sm font-bold hover:text-red-500 transition-colors"
+                                className="text-slate-500 dark:text-slate-400 text-fluid-sm font-bold hover:text-red-500 transition-colors touch-target"
                             >
                                 Clear All
                             </button>
@@ -363,7 +363,7 @@ const Pokedex = () => {
 
                     {/* Filter Panel */}
                     {isFilterOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] rounded-xl shadow-xl p-6 z-50 animate-fade-in-down">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] rounded-xl shadow-xl p-4 sm:p-6 z-50 animate-fade-in-down overflow-safe max-h-[80vh] overflow-y-auto custom-scrollbar" style={{ maxWidth: 'min(calc(100vw - 4rem), 600px)' }}>
                             {/* Generation Filter */}
                             <div className="mb-6">
                                 <h4 className="text-sm font-bold text-slate-700 dark:text-white mb-3">Generation</h4>
@@ -480,24 +480,27 @@ const Pokedex = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid gap-3 sm:gap-4 md:gap-5 lg:gap-6 pokemon-grid-container overflow-safe" 
+                 style={{
+                   gridTemplateColumns: `repeat(auto-fill, minmax(250px, 1fr))`
+                 }}>
                 {pokemonList.map((pokemon) => (
-                    <div key={pokemon.id} className="pokemon-card bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] rounded-3xl p-5 flex flex-col group hover:shadow-lg transition-all duration-300">
-                        <div className="flex justify-between items-start mb-4">
-                            <span className="text-xs font-bold text-slate-400">#{String(pokemon.id).padStart(4, '0')}</span>
-                            <button className="text-slate-300 hover:text-red-500 transition-colors">
-                                <span className="material-symbols-outlined">favorite</span>
+                    <div key={pokemon.id} className="pokemon-card bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] rounded-2xl md:rounded-3xl p-3 md:p-5 flex flex-col group hover:shadow-lg transition-all duration-300 h-full flex-zoom-safe">
+                        <div className="flex justify-between items-start space-fluid-4">
+                            <span className="text-fluid-xs font-bold text-slate-400">#{String(pokemon.id).padStart(4, '0')}</span>
+                            <button className="text-slate-300 hover:text-red-500 transition-colors p-1 touch-target">
+                                <span className="material-symbols-outlined text-fluid-lg">favorite</span>
                             </button>
                         </div>
                         <div
                             onClick={() => navigate(`/pokemon/${pokemon.id.toString().includes('-f') ? pokemon.id.split('-')[0] : pokemon.id}`)}
-                            className="aspect-square bg-slate-50 dark:bg-[#233648] rounded-2xl mb-4 flex items-center justify-center overflow-hidden p-4 group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                            className="aspect-pokemon bg-slate-50 dark:bg-[#233648] rounded-xl md:rounded-2xl space-fluid-4 flex items-center justify-center overflow-hidden p-3 md:p-4 group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                         >
                             <img alt={pokemon.name} className="w-full h-full object-contain" src={pokemon.image} />
                         </div>
-                        <div className="text-center mb-4">
-                            <h3 className="text-lg font-black capitalize mb-2 dark:text-white">{pokemon.name}</h3>
-                            <div className="flex justify-center gap-2 flex-wrap">
+                        <div className="text-center space-fluid-4 flex-grow">
+                            <h3 className="text-fluid-sm md:text-fluid-lg font-black capitalize mb-2 dark:text-white line-clamp-1">{pokemon.name}</h3>
+                            <div className="flex justify-center space-fluid-2 flex-wrap">
                                 {pokemon.types.map(type => (
                                     <TypeBadge key={type} type={type} />
                                 ))}
@@ -506,17 +509,17 @@ const Pokedex = () => {
                         <div className="mt-auto grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => handleAddToTeam(pokemon)}
-                                className="py-2.5 bg-slate-100 dark:bg-[#233648] hover:bg-green-500 hover:text-white dark:text-white transition-all rounded-xl text-xs font-bold flex items-center justify-center gap-2"
+                                className="py-2 md:py-2.5 bg-slate-100 dark:bg-[#233648] hover:bg-green-500 hover:text-white dark:text-white transition-all rounded-lg md:rounded-xl text-fluid-xs font-bold flex items-center justify-center gap-1 md:gap-2 touch-target"
                             >
-                                <span className="material-symbols-outlined text-sm">add_circle</span>
-                                Add
+                                <span className="material-symbols-outlined text-fluid-sm">add_circle</span>
+                                <span className="hidden sm:inline">Add</span>
                             </button>
                             <button
                                 onClick={() => handleAnalyze(pokemon.types)}
-                                className="py-2.5 bg-slate-100 dark:bg-[#233648] hover:bg-primary hover:text-white dark:text-white transition-all rounded-xl text-xs font-bold flex items-center justify-center gap-2"
+                                className="py-2 md:py-2.5 bg-slate-100 dark:bg-[#233648] hover:bg-primary hover:text-white dark:text-white transition-all rounded-lg md:rounded-xl text-fluid-xs font-bold flex items-center justify-center gap-1 md:gap-2 touch-target"
                             >
-                                <span className="material-symbols-outlined text-sm">calculate</span>
-                                Analyze
+                                <span className="material-symbols-outlined text-fluid-sm">calculate</span>
+                                <span className="hidden sm:inline">Analyze</span>
                             </button>
                         </div>
                     </div>
@@ -524,16 +527,16 @@ const Pokedex = () => {
             </div>
 
             {!searchTerm && hasMore && (
-                <div className="flex flex-col items-center gap-6 py-12">
+                <div className="flex flex-col items-center space-fluid-6 py-12">
                     {loading && (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center space-fluid-4">
                             <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-sm font-semibold text-slate-500">Loading...</span>
+                            <span className="text-fluid-sm font-semibold text-slate-500">Loading...</span>
                         </div>
                     )}
                     <button
                         onClick={loadMore}
-                        className="px-12 py-4 bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] hover:border-primary dark:hover:border-primary rounded-full font-bold text-sm shadow-sm transition-all dark:text-white"
+                        className="px-12 py-4 bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] hover:border-primary dark:hover:border-primary rounded-full font-bold text-fluid-sm shadow-sm transition-all dark:text-white touch-target"
                         disabled={loading}
                     >
                         Load More Pokémon
