@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchPokemonList, fetchPokemonDetails, searchPokemon, searchPokemonLocal, fetchPokemonByType } from '../services/pokeapi';
 import TypeBadge from '../components/TypeBadge';
@@ -39,6 +39,12 @@ const Pokedex = () => {
 
     // Pagination control
     const [pageSize, setPageSize] = useState(25); // Default 25 Pokemon per page
+    const [showScrollTop, setShowScrollTop] = useState(false);
+    const [activeGen, setActiveGen] = useState(null);
+    const [scrollPercent, setScrollPercent] = useState(0);
+    const [isScrubbing, setIsScrubbing] = useState(false);
+    const scrubberRef = useRef(null);
+    const scrubbingTimeout = useRef(null);
 
     // Advanced filters
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -48,6 +54,8 @@ const Pokedex = () => {
         sortBy: 'pokedex',
         showSpecial: false
     });
+
+    const [addFeedbacks, setAddFeedbacks] = useState({}); // { id: 'success' | 'error' | null }
 
     // For type filtering
     const [searchParams] = useSearchParams();
@@ -142,6 +150,89 @@ const Pokedex = () => {
 
         return () => clearTimeout(timer);
     }, [searchTerm, filters]);
+
+    // Scroll listener for "Back to Top" and active generation detection
+    useEffect(() => {
+        let ticking = false;
+
+        const handleScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrollY = window.scrollY;
+                    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                    const percent = Math.min(Math.max((scrollY / docHeight) * 100, 0), 100);
+
+                    setScrollPercent(percent);
+                    setShowScrollTop(scrollY > 400);
+
+                    // Only detect active generation periodically or if height is small
+                    const gens = Object.keys(GENERATION_RANGES);
+                    for (const gen of gens.reverse()) {
+                        const element = document.getElementById(`gen-${gen}`);
+                        if (element && element.getBoundingClientRect().top < 200) {
+                            setActiveGen(parseInt(gen));
+                            break;
+                        }
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (scrubbingTimeout.current) clearTimeout(scrubbingTimeout.current);
+        };
+    }, []);
+
+    const handleScrubStart = (e) => {
+        setIsScrubbing(true);
+        if (scrubbingTimeout.current) clearTimeout(scrubbingTimeout.current);
+        handleScrub(e);
+    };
+
+    const handleScrubEnd = () => {
+        // Delay resetting isScrubbing to prevent flash of content during fast deceleration
+        scrubbingTimeout.current = setTimeout(() => {
+            setIsScrubbing(false);
+        }, 150);
+    };
+
+    const handleScrub = (e) => {
+        if (!scrubberRef.current) return;
+
+        const rect = scrubberRef.current.getBoundingClientRect();
+        const touchY = e.touches ? e.touches[0].clientY : e.clientY;
+        const relativeY = touchY - rect.top;
+        const percent = Math.min(Math.max((relativeY / rect.height) * 100, 0), 100);
+
+        // Use requestAnimationFrame for smooth scrolling
+        window.requestAnimationFrame(() => {
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            window.scrollTo({
+                top: (percent / 100) * docHeight,
+                behavior: 'auto' // Use 'auto' for instant response while scrubbing
+            });
+        });
+    };
+
+    const scrollToId = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            const offset = 100; // Header height
+            const bodyRect = document.body.getBoundingClientRect().top;
+            const elementRect = element.getBoundingClientRect().top;
+            const elementPosition = elementRect - bodyRect;
+            const offsetPosition = elementPosition - offset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     const loadInitialPokemon = async () => {
         setLoading(true);
@@ -259,11 +350,17 @@ const Pokedex = () => {
 
     const handleAddToTeam = (pokemon) => {
         const added = addToTeam(pokemon);
-        if (added) {
-            alert(`Added ${pokemon.name} to your team!`);
-        } else {
-            alert('Your team is full! Please remove a member in the Team Builder.');
-        }
+        const status = added ? 'success' : 'error';
+
+        setAddFeedbacks(prev => ({ ...prev, [pokemon.id]: status }));
+
+        setTimeout(() => {
+            setAddFeedbacks(prev => {
+                const newFeedbacks = { ...prev };
+                delete newFeedbacks[pokemon.id];
+                return newFeedbacks;
+            });
+        }, 3000);
     };
 
     const applyFilters = () => {
@@ -295,7 +392,7 @@ const Pokedex = () => {
     };
 
     return (
-        <div className="w-full space-y-6 md:space-y-8">
+        <div className={`mx-auto pb-20 px-2 sm:px-4 md:px-8 space-y-6 sm:space-y-10 overflow-safe ${isScrubbing ? 'is-scrubbing' : ''}`}>
             <div className="flex flex-col space-fluid-6">
                 <div className="flex flex-col space-fluid-4">
                     <h1 className="text-fluid-3xl md:text-fluid-4xl lg:text-fluid-5xl font-black tracking-tight dark:text-white">Pokédex Explorer</h1>
@@ -480,51 +577,113 @@ const Pokedex = () => {
                 </div>
             </div>
 
-            <div className="grid gap-3 sm:gap-4 md:gap-5 lg:gap-6 pokemon-grid-container overflow-safe" 
-                 style={{
-                   gridTemplateColumns: `repeat(auto-fill, minmax(250px, 1fr))`
-                 }}>
-                {pokemonList.map((pokemon) => (
-                    <div key={pokemon.id} className="pokemon-card bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] rounded-2xl md:rounded-3xl p-3 md:p-5 flex flex-col group hover:shadow-lg transition-all duration-300 h-full flex-zoom-safe">
-                        <div className="flex justify-between items-start space-fluid-4">
-                            <span className="text-fluid-xs font-bold text-slate-400">#{String(pokemon.id).padStart(4, '0')}</span>
-                            <button className="text-slate-300 hover:text-red-500 transition-colors p-1 touch-target">
-                                <span className="material-symbols-outlined text-fluid-lg">favorite</span>
-                            </button>
-                        </div>
-                        <div
-                            onClick={() => navigate(`/pokemon/${pokemon.id.toString().includes('-f') ? pokemon.id.split('-')[0] : pokemon.id}`)}
-                            className="aspect-pokemon bg-slate-50 dark:bg-[#233648] rounded-xl md:rounded-2xl space-fluid-4 flex items-center justify-center overflow-hidden p-3 md:p-4 group-hover:scale-105 transition-transform duration-300 cursor-pointer"
-                        >
-                            <img alt={pokemon.name} className="w-full h-full object-contain" src={pokemon.image} />
-                        </div>
-                        <div className="text-center space-fluid-4 flex-grow">
-                            <h3 className="text-fluid-sm md:text-fluid-lg font-black capitalize mb-2 dark:text-white line-clamp-1">{pokemon.name}</h3>
-                            <div className="flex justify-center space-fluid-2 flex-wrap">
-                                {pokemon.types.map(type => (
-                                    <TypeBadge key={type} type={type} />
-                                ))}
+            <div className="grid gap-2 sm:gap-4 md:gap-5 lg:gap-6 pokemon-grid-container overflow-safe"
+                style={{
+                    gridTemplateColumns: `repeat(auto-fill, minmax(150px, 1fr))`
+                }}>
+                {pokemonList.map((pokemon, index) => {
+                    // Check if this pokemon is the first of its generation in the current list
+                    let genId = null;
+                    if (!searchTerm && !isFiltering) {
+                        for (const [gen, range] of Object.entries(GENERATION_RANGES)) {
+                            if (pokemon.id === range.start) {
+                                genId = `gen-${gen}`;
+                                break;
+                            }
+                        }
+                    }
+
+                    return (
+                        <div key={pokemon.id} id={genId} className="pokemon-card bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#233648] rounded-2xl md:rounded-3xl p-3 md:p-5 flex flex-col group hover:shadow-lg transition-all duration-300 h-full flex-zoom-safe">
+                            <div className="flex justify-between items-start space-fluid-4">
+                                <span className="text-fluid-xs font-bold text-slate-400">#{String(pokemon.id).padStart(4, '0')}</span>
+                                <button className="text-slate-300 hover:text-red-500 transition-colors p-1 touch-target">
+                                    <span className="material-symbols-outlined text-fluid-lg">favorite</span>
+                                </button>
+                            </div>
+                            <div
+                                onClick={() => navigate(`/pokemon/${pokemon.id.toString().includes('-f') ? pokemon.id.split('-')[0] : pokemon.id}`)}
+                                className="aspect-pokemon bg-slate-50 dark:bg-[#233648] rounded-xl md:rounded-2xl space-fluid-4 flex items-center justify-center overflow-hidden p-3 md:p-4 group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                            >
+                                <img alt={pokemon.name} className="w-full h-full object-contain" src={pokemon.image} />
+                            </div>
+                            <div className="text-center space-fluid-4 flex-grow">
+                                <h3 className="text-fluid-sm md:text-fluid-lg font-black capitalize mb-2 dark:text-white line-clamp-1">{pokemon.name}</h3>
+                                <div className="flex justify-center space-fluid-2 flex-wrap">
+                                    {pokemon.types.map(type => (
+                                        <TypeBadge key={type} type={type} />
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="mt-auto grid grid-cols-2 gap-1.5 sm:gap-2">
+                                <button
+                                    onClick={() => handleAddToTeam(pokemon)}
+                                    className={`py-1.5 sm:py-2 md:py-2.5 transition-all rounded-lg md:rounded-xl text-[10px] sm:text-fluid-xs font-bold flex items-center justify-center gap-1 md:gap-2 touch-target ${addFeedbacks[pokemon.id] === 'success'
+                                        ? 'bg-green-500 text-white shadow-lg'
+                                        : addFeedbacks[pokemon.id] === 'error'
+                                            ? 'bg-red-500 text-white shadow-lg'
+                                            : 'bg-slate-100 dark:bg-[#233648] hover:bg-green-500 hover:text-white dark:text-white'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined text-[16px] sm:text-fluid-sm transition-transform duration-300">
+                                        {addFeedbacks[pokemon.id] === 'success' ? 'check_circle' : addFeedbacks[pokemon.id] === 'error' ? 'error' : 'add_circle'}
+                                    </span>
+                                    <span className="inline">
+                                        {addFeedbacks[pokemon.id] === 'success' ? 'Ok' : addFeedbacks[pokemon.id] === 'error' ? 'Full' : 'Add'}
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => handleAnalyze(pokemon.types)}
+                                    className="py-1.5 sm:py-2 md:py-2.5 bg-slate-100 dark:bg-[#233648] hover:bg-primary hover:text-white dark:text-white transition-all rounded-lg md:rounded-xl text-[10px] sm:text-fluid-xs font-bold flex items-center justify-center gap-1 md:gap-2 touch-target"
+                                >
+                                    <span className="material-symbols-outlined text-[16px] sm:text-fluid-sm">calculate</span>
+                                    <span className="inline">Types</span>
+                                </button>
                             </div>
                         </div>
-                        <div className="mt-auto grid grid-cols-2 gap-2">
-                            <button
-                                onClick={() => handleAddToTeam(pokemon)}
-                                className="py-2 md:py-2.5 bg-slate-100 dark:bg-[#233648] hover:bg-green-500 hover:text-white dark:text-white transition-all rounded-lg md:rounded-xl text-fluid-xs font-bold flex items-center justify-center gap-1 md:gap-2 touch-target"
-                            >
-                                <span className="material-symbols-outlined text-fluid-sm">add_circle</span>
-                                <span className="hidden sm:inline">Add</span>
-                            </button>
-                            <button
-                                onClick={() => handleAnalyze(pokemon.types)}
-                                className="py-2 md:py-2.5 bg-slate-100 dark:bg-[#233648] hover:bg-primary hover:text-white dark:text-white transition-all rounded-lg md:rounded-xl text-fluid-xs font-bold flex items-center justify-center gap-1 md:gap-2 touch-target"
-                            >
-                                <span className="material-symbols-outlined text-fluid-sm">calculate</span>
-                                <span className="hidden sm:inline">Analyze</span>
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
+
+            {/* Fast Scroll Scrubber */}
+            {!searchTerm && !isFiltering && (
+                <div
+                    className="quick-nav-rail md:hidden"
+                    ref={scrubberRef}
+                    onTouchStart={handleScrubStart}
+                    onTouchMove={handleScrub}
+                    onTouchEnd={handleScrubEnd}
+                    onClick={handleScrub}
+                >
+                    <div className="scrubber-track"></div>
+                    <div
+                        className="scrubber-thumb"
+                        style={{ top: `${scrollPercent}%` }}
+                    ></div>
+
+                    {/* Floating Label for active Generation */}
+                    <div
+                        className="scrubber-label"
+                        style={{ top: `${scrollPercent}%` }}
+                    >
+                        Gen {activeGen || '...'}
+                    </div>
+
+                    {/* Static guide markers */}
+                    <div className="absolute inset-0 flex flex-col justify-between py-2 items-center pointer-events-none opacity-30">
+                        {['1', '5', '9'].map(g => (
+                            <span key={g} className="text-[8px] font-black dark:text-white">G{g}</span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className={`scroll-top-btn ${showScrollTop ? 'visible' : ''}`}
+            >
+                <span className="material-symbols-outlined font-black">arrow_upward</span>
+            </button>
 
             {!searchTerm && hasMore && (
                 <div className="flex flex-col items-center space-fluid-6 py-12">

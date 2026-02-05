@@ -162,7 +162,7 @@ const TeamBuilder = () => {
     };
 
     return (
-        <div className="mx-auto pb-20 px-2 sm:px-4 md:px-8 space-y-10" style={{ maxWidth: 'clamp(100vw, 95vw, 1920px)' }}>
+        <div className="mx-auto pb-20 px-3 sm:px-6 md:px-8 space-y-6 sm:space-y-10" style={{ maxWidth: 'clamp(100vw, 95vw, 1920px)' }}>
             {/* Header Section */}
             <div className="flex flex-wrap items-center justify-between space-fluid-4">
                 <div>
@@ -177,7 +177,7 @@ const TeamBuilder = () => {
             </div>
 
             {/* Slots Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 overflow-safe">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 sm:gap-4 overflow-safe">
                 {team.map((member, index) => (
                     <div key={index} className={`bg-white dark:bg-[#1a2632] border ${member ? 'border-slate-200 dark:border-[#233648]' : 'border-dashed border-2 dark:border-[#233648]'} p-4 rounded-xl flex flex-col space-fluid-4 relative transition-all flex-zoom-safe`}>
                         {/* Search Input */}
@@ -258,7 +258,7 @@ const TeamBuilder = () => {
                     <h3 className="text-fluid-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">Defensive Type Matrix</h3>
                     <p className="text-fluid-xs text-slate-500 dark:text-[#92adc9] mt-1 uppercase tracking-widest">Team Vulnerabilities & Immunities</p>
                 </div>
-                <div className="w-full overflow-x-hidden">
+                <div className="w-full overflow-x-auto custom-scrollbar">
                     <table className="w-full border-collapse text-center zebra-table">
                         <thead>
                             <tr className="bg-slate-100 dark:bg-[#101922] border-b border-slate-200 dark:border-[#233648]">
@@ -310,7 +310,7 @@ const TeamBuilder = () => {
                     <h3 className="text-fluid-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">Offensive Coverage Matrix</h3>
                     <p className="text-fluid-xs text-slate-500 dark:text-[#92adc9] mt-1 uppercase tracking-widest">Type-Effectiveness (STAB)</p>
                 </div>
-                <div className="w-full overflow-x-hidden">
+                <div className="w-full overflow-x-auto custom-scrollbar">
                     <table className="w-full border-collapse text-center zebra-table">
                         <thead>
                             <tr className="bg-slate-100 dark:bg-[#101922] border-b border-slate-200 dark:border-[#233648]">
@@ -363,38 +363,43 @@ const TeamBuilder = () => {
                         Team Health Dashboard
                     </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         {/* Liabilities (Weaknesses) */}
                         <div>
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-fluid-xs font-bold text-red-500 uppercase tracking-[0.2em]">Team Liabilities (2+ Weaknesses)</p>
                                 <span className="text-fluid-xs text-slate-500 dark:text-[#92adc9] font-medium">Sorted by Vulnerability</span>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(max(200px,100%),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                                 {analysis.typeTotals.filter(t => t.weak >= 2).map(t => (
-                                    <div key={t.type} className="bg-red-500/5 border border-red-500/20 p-3 rounded-lg flex items-center justify-between">
-                                        <div className="flex items-center space-fluid-3">
+                                    <div key={t.type} className="group relative bg-white dark:bg-slate-800/40 border border-red-500/20 dark:border-red-500/10 p-4 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md hover:border-red-500/40 transition-all duration-300 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className="flex items-center space-fluid-3 relative z-10">
                                             {typeChart && typeChart[t.type] && typeChart[t.type].sprite ? (
-                                                <div className="flex items-center justify-center w-12 h-6">
+                                                <div className="flex items-center justify-center w-14 h-7 filter drop-shadow-sm">
                                                     <img src={typeChart[t.type].sprite} alt={t.type} className="w-full h-full object-contain" />
                                                 </div>
                                             ) : (
-                                                <div className={`type-icon ${TYPES[t.type].color}`}>{t.type.substring(0, 2)}</div>
+                                                <div className={`type-icon shadow-sm ${TYPES[t.type].color}`}>{t.type.substring(0, 2)}</div>
                                             )}
-                                            <div>
-                                                <p className="text-fluid-sm font-bold text-slate-700 dark:text-white capitalize">{t.type}</p>
-                                                <p className="text-fluid-xs text-slate-400">{t.weak} Members</p>
+                                            <div className="ml-1">
+                                                <p className="text-fluid-sm font-black text-slate-800 dark:text-white capitalize leading-none mb-1">{t.type}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{t.weak} Vulnerable</p>
                                             </div>
                                         </div>
-                                        {t.weak >= 3 ? (
-                                            <span className="bg-red-600 px-2 py-1 rounded text-[10px] font-black text-white">CRIT</span>
-                                        ) : (
-                                            <span className="bg-red-900/40 text-red-400 border border-red-400/20 px-2 py-1 rounded text-[10px] font-black uppercase">STD</span>
-                                        )}
+                                        <div className="relative z-10">
+                                            {t.weak >= 3 ? (
+                                                <span className="bg-red-600 px-2.5 py-1 rounded-full text-[10px] font-black text-white shadow-sm ring-2 ring-red-500/20">CRIT</span>
+                                            ) : (
+                                                <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full text-[10px] font-black uppercase">STD</span>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                                 {analysis.typeTotals.filter(t => t.weak >= 2).length === 0 && (
-                                    <p className="text-sm text-slate-400 italic col-span-2">No major shared weaknesses found.</p>
+                                    <div className="col-span-full border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center">
+                                        <p className="text-sm text-slate-400 font-medium italic">No major shared weaknesses found. Team coverage is balanced.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -405,27 +410,32 @@ const TeamBuilder = () => {
                                 <p className="text-fluid-xs font-bold text-green-500 uppercase tracking-[0.2em]">Team Resistances (2+ Members)</p>
                                 <span className="text-fluid-xs text-slate-500 dark:text-[#92adc9] font-medium">Core Defensive Coverage</span>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(max(200px,100%),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                                 {analysis.typeTotals.filter(t => (t.resist + t.immune) >= 2).map(t => (
-                                    <div key={t.type} className="bg-green-500/5 border border-green-500/20 p-3 rounded-lg flex items-center justify-between">
-                                        <div className="flex items-center space-fluid-3">
+                                    <div key={t.type} className="group relative bg-white dark:bg-slate-800/40 border border-green-500/20 dark:border-green-500/10 p-4 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md hover:border-green-500/40 transition-all duration-300 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className="flex items-center space-fluid-3 relative z-10">
                                             {typeChart && typeChart[t.type] && typeChart[t.type].sprite ? (
-                                                <div className="flex items-center justify-center w-12 h-6">
+                                                <div className="flex items-center justify-center w-14 h-7 filter drop-shadow-sm">
                                                     <img src={typeChart[t.type].sprite} alt={t.type} className="w-full h-full object-contain" />
                                                 </div>
                                             ) : (
-                                                <div className={`type-icon ${TYPES[t.type].color}`}>{t.type.substring(0, 2)}</div>
+                                                <div className={`type-icon shadow-sm ${TYPES[t.type].color}`}>{t.type.substring(0, 2)}</div>
                                             )}
-                                            <div>
-                                                <p className="text-fluid-sm font-bold text-slate-700 dark:text-white capitalize">{t.type}</p>
-                                                <p className="text-fluid-xs text-slate-400">{t.resist + t.immune} Resists</p>
+                                            <div className="ml-1">
+                                                <p className="text-fluid-sm font-black text-slate-800 dark:text-white capitalize leading-none mb-1">{t.type}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{t.resist + t.immune} Resistors</p>
                                             </div>
                                         </div>
-                                            <span className="text-green-500 font-black text-xs">x{t.resist + t.immune}</span>
+                                        <div className="relative z-10">
+                                            <span className="text-green-600 dark:text-green-400 font-black text-base drop-shadow-sm">x{t.resist + t.immune}</span>
+                                        </div>
                                     </div>
                                 ))}
                                 {analysis.typeTotals.filter(t => (t.resist + t.immune) >= 2).length === 0 && (
-                                    <p className="text-sm text-slate-400 italic col-span-2">No major shared resistances.</p>
+                                    <div className="col-span-full border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center">
+                                        <p className="text-sm text-slate-400 font-medium italic">No major shared resistances found.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>

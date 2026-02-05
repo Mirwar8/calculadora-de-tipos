@@ -1,19 +1,24 @@
 
 import { Outlet } from 'react-router-dom';
-import Header from './Header';
 import Sidebar from './Sidebar';
+import Header from './Header';
+import { UserProvider } from '../context/UserContext';
+import EditProfileModal from './EditProfileModal';
 
 const Layout = () => {
     return (
-        <div className="min-h-screen flex flex-col responsive-container overflow-safe">
-            <Header />
-            <div className="w-full mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10 3xl:px-12 flex flex-col lg:flex-row flex-1" style={{ maxWidth: 'clamp(100vw, 95vw, 2560px)' }}>
-                <Sidebar />
-                <main className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8 2xl:p-10 overflow-y-auto w-full flex-zoom-safe">
-                    <Outlet />
-                </main>
+        <UserProvider>
+            <div className="min-h-screen bg-white dark:bg-background-dark text-slate-900 transition-colors duration-300">
+                <Header />
+                <div className="mx-auto flex" style={{ maxWidth: 'min(98vw, 1920px)' }}>
+                    <Sidebar />
+                    <main className="flex-1 w-full px-4 sm:px-6 md:px-8 pt-20 sm:pt-24 lg:pt-28 pb-6 sm:pb-8 lg:pb-10 max-w-full overflow-hidden lg:ml-64 xl:ml-72 2xl:ml-80">
+                        <Outlet />
+                    </main>
+                </div>
+                <EditProfileModal />
             </div>
-        </div>
+        </UserProvider>
     );
 };
 

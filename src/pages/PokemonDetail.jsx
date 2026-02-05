@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchPokemonFullDetails } from '../services/pokeapi';
 import TypeBadge from '../components/TypeBadge';
+import { useTeam } from '../hooks/useTeam';
 
 const PokemonDetail = () => {
     const { id } = useParams();
@@ -11,6 +12,8 @@ const PokemonDetail = () => {
     const [loading, setLoading] = useState(true);
     const [selectedVersion, setSelectedVersion] = useState('');
     const [language, setLanguage] = useState('es');
+    const { addToTeam } = useTeam();
+    const [addFeedback, setAddFeedback] = useState(null);
 
     useEffect(() => {
         const loadPokemon = async () => {
@@ -29,6 +32,29 @@ const PokemonDetail = () => {
         };
         loadPokemon();
     }, [id]);
+
+    const handleAddToTeam = () => {
+        // Normalize pokemon data for the team builder
+        const normalizedPokemon = {
+            id: pokemon.id,
+            name: pokemon.name,
+            types: pokemon.types.map(t => t.type.name),
+            abilities: pokemon.abilities.map(a => ({
+                name: a.ability.name,
+                is_hidden: a.is_hidden
+            })),
+            image: pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default
+        };
+
+        const success = addToTeam(normalizedPokemon);
+        if (success) {
+            setAddFeedback({ type: 'success', message: '¡Agregado al equipo!' });
+        } else {
+            setAddFeedback({ type: 'error', message: '¡Equipo lleno!' });
+        }
+
+        setTimeout(() => setAddFeedback(null), 3000);
+    };
 
     if (loading) {
         return (
@@ -143,18 +169,18 @@ const PokemonDetail = () => {
     };
 
     return (
-        <div className="mx-auto p-2 sm:p-4 md:p-6 lg:p-8 font-sans overflow-safe" style={{ maxWidth: 'clamp(100vw, 90vw, 1400px)' }}>
-            <main className="relative w-full mx-auto bg-pokedex-blue-dark rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 shadow-bevel border-4 border-black/20 overflow-safe" style={{ maxWidth: 'min(calc(100vw - 4rem), 1200px)' }}>
+        <div className="mx-auto p-1 sm:p-4 md:p-6 lg:p-8 font-sans overflow-safe" style={{ maxWidth: 'clamp(100vw, 95vw, 1400px)' }}>
+            <main className="relative w-full mx-auto bg-pokedex-blue-dark rounded-2xl sm:rounded-3xl p-3 sm:p-6 md:p-8 lg:p-10 shadow-bevel border-4 border-black/20 overflow-safe" style={{ maxWidth: 'min(calc(100vw - 1rem), 1200px)' }}>
                 {/* Top Sensor Array & Header */}
-                <header className="flex items-start justify-between mb-6 sm:mb-8 relative z-10">
-                    <div className="flex items-center space-fluid-4">
-                        <div className="size-16 md:size-20 rounded-full bg-blue-400 border-4 border-white/20 shadow-lg relative overflow-hidden lens-reflection animate-pulse">
+                <header className="flex items-start justify-between mb-4 sm:mb-8 relative z-10">
+                    <div className="flex items-center space-fluid-3 sm:space-fluid-4">
+                        <div className="size-12 sm:size-16 md:size-20 rounded-full bg-blue-400 border-2 sm:border-4 border-white/20 shadow-lg relative overflow-hidden lens-reflection animate-pulse">
                             <div className="absolute inset-0 bg-gradient-to-br from-blue-300 to-blue-600 opacity-80"></div>
                         </div>
-                        <div className="flex gap-2 self-start mt-1">
-                            <div className="size-3 md:size-4 rounded-full bg-red-500 shadow-md border border-red-700"></div>
-                            <div className="size-3 md:size-4 rounded-full bg-yellow-400 shadow-md border border-yellow-600"></div>
-                            <div className="size-3 md:size-4 rounded-full bg-green-500 shadow-md border border-green-700"></div>
+                        <div className="flex gap-1.5 sm:gap-2 self-start mt-1">
+                            <div className="size-2 sm:size-3 md:size-4 rounded-full bg-red-500 shadow-md border border-red-700"></div>
+                            <div className="size-2 sm:size-3 md:size-4 rounded-full bg-yellow-400 shadow-md border border-yellow-600"></div>
+                            <div className="size-2 sm:size-3 md:size-4 rounded-full bg-green-500 shadow-md border border-green-700"></div>
                         </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -281,6 +307,24 @@ const PokemonDetail = () => {
                                     <span className="material-symbols-outlined text-sm">expand_more</span>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Add to Team Button */}
+                        <div className="mt-4">
+                            <button
+                                onClick={handleAddToTeam}
+                                className={`w-full py-4 rounded-xl font-black text-fluid-sm tracking-[0.2em] uppercase shadow-lg transform active:scale-95 transition-all flex items-center justify-center gap-3 border-b-4 ${addFeedback?.type === 'success'
+                                    ? 'bg-green-500 border-green-700 text-white'
+                                    : addFeedback?.type === 'error'
+                                        ? 'bg-red-500 border-red-700 text-white'
+                                        : 'bg-primary border-blue-700 text-white hover:bg-blue-400'
+                                    }`}
+                            >
+                                <span className="material-symbols-outlined">
+                                    {addFeedback?.type === 'success' ? 'check_circle' : addFeedback?.type === 'error' ? 'error' : 'add_circle'}
+                                </span>
+                                {addFeedback ? addFeedback.message : 'Agregar al Equipo'}
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -1,8 +1,10 @@
 
 import { Link, useLocation } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 
 const Sidebar = () => {
     const location = useLocation();
+    const { userData } = useUser();
 
     const getLinkClass = (path) => {
         const isActive = location.pathname === path;
@@ -12,15 +14,19 @@ const Sidebar = () => {
     };
 
     return (
-        <aside className="w-full lg:w-64 xl:w-72 2xl:w-80 border-r border-slate-200 dark:border-[#233648] p-3 sm:p-4 md:p-6 flex flex-col justify-between hidden lg:flex sticky top-[65px] h-[calc(100vh-65px)] overflow-safe">
+        <aside className="w-full lg:w-64 xl:w-72 2xl:w-80 border-r border-slate-200 dark:border-[#233648] p-3 sm:p-4 md:p-6 flex flex-col justify-between fixed left-0 top-[65px] h-[calc(100vh-65px)] overflow-safe z-[50] hidden lg:block">
             <div className="flex flex-col space-fluid-8">
                 <div className="flex items-center space-fluid-3 p-3 bg-slate-50 dark:bg-[#1a2632] rounded-xl border border-slate-100 dark:border-[#233648]">
-                    <div className="bg-primary/20 rounded-full size-12 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        <span className="material-symbols-outlined text-primary text-2xl">account_circle</span>
+                    <div className="bg-primary/20 rounded-full size-12 flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-primary/10">
+                        {userData.avatar ? (
+                            <img src={userData.avatar} alt="User Avatar" className="size-full object-cover" />
+                        ) : (
+                            <span className="material-symbols-outlined text-primary text-2xl">account_circle</span>
+                        )}
                     </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                        <h3 className="font-bold text-fluid-sm truncate">Pro Trainer</h3>
-                        <p className="text-fluid-xs text-slate-500 dark:text-[#92adc9] truncate">Rank: Master Ball</p>
+                    <div className="flex flex-col min-w-0 flex-1 ml-1">
+                        <h3 className="font-black text-fluid-sm truncate dark:text-white leading-tight">{userData.name}</h3>
+                        <p className="text-[10px] font-bold text-slate-500 dark:text-[#92adc9] truncate uppercase tracking-tighter opacity-80">{userData.rank}</p>
                     </div>
                 </div>
                 <nav className="flex flex-col space-fluid-2">
