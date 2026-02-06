@@ -212,11 +212,6 @@ const TeamBuilder = () => {
                             {member ? (
                                 <>
                                     <div className="absolute inset-0 bg-center bg-no-repeat bg-contain p-4 transition-transform group-hover:scale-110 duration-300" style={{ backgroundImage: `url("${member.image}")` }}></div>
-                                    <div className="absolute top-2 right-2 flex flex-col space-fluid-1">
-                                        {member.types.map(t => (
-                                            <span key={t} className={`type-badge ${TYPES[t].color}`}>{t.substring(0, 3)}</span>
-                                        ))}
-                                    </div>
                                     <div className="absolute bottom-2 left-2">
                                         <button onClick={() => handleRemove(index)} className="bg-black/50 hover:bg-red-500 text-white p-1 rounded backdrop-blur touch-target">
                                             <span className="material-symbols-outlined text-fluid-sm">close</span>
@@ -230,6 +225,29 @@ const TeamBuilder = () => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Type Icons below image */}
+                        {member && (
+                            <div className="flex items-center justify-center gap-2 py-1">
+                                {member.types.map(t => (
+                                    <div key={t} className="relative group/type">
+                                        {typeChart && typeChart[t] && typeChart[t].sprite ? (
+                                            <img
+                                                src={typeChart[t].sprite}
+                                                alt={t}
+                                                className="h-5 sm:h-6 object-contain drop-shadow-sm brightness-110"
+                                                title={t}
+                                            />
+                                        ) : (
+                                            <span className={`type-badge ${TYPES[t]?.color || 'bg-slate-400'}`}>{t.substring(0, 3)}</span>
+                                        )}
+                                        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover/type:opacity-100 transition-opacity pointer-events-none capitalize whitespace-nowrap z-30">
+                                            {t}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Ability Selector */}
                         {member && member.abilities && member.abilities.length > 0 && (

@@ -28,14 +28,14 @@ export const fetchTypes = async () => {
        // but typically standard types are what we need.
        if (t.name === 'unknown' || t.name === 'shadow') return;
 
-       // Extract sprite (Gen 4 Platinum preference as requested)
-       // Fairy type didn't exist in Gen 4, so it won't have a Platinum sprite. Fallback to Gen 8/9.
+       // Extract sprite (Gen 6 X-Y preference)
+       // Fairy type was introduced in Gen 6, so it should have an X-Y sprite.
        let spriteUrl = null;
        if (t.sprites) {
-           if (t.sprites['generation-iv'] && t.sprites['generation-iv']['platinum']) {
-               spriteUrl = t.sprites['generation-iv']['platinum']['name_icon'];
+           if (t.sprites['generation-vi'] && t.sprites['generation-vi']['x-y']) {
+               spriteUrl = t.sprites['generation-vi']['x-y']['name_icon'];
            }
-           // Fallback for Fairy (or missing sprites)
+           // Fallback for types missing in Gen 6 (if any)
            if (!spriteUrl && t.sprites['generation-viii'] && t.sprites['generation-viii']['sword-shield']) {
                 spriteUrl = t.sprites['generation-viii']['sword-shield']['name_icon'];
            }
@@ -92,10 +92,14 @@ export const fetchPokemonDetails = async (url) => {
 };
 
 export const fetchPokemonSpecies = async (idOrName) => {
+  if (!idOrName) return null;
   try {
     const response = await fetch(`${BASE_URL}/pokemon-species/${idOrName}`);
-    const data = await response.json();
-    return data;
+    if (!response.ok) {
+        console.warn(`Pokemon species ${idOrName} not found (Status: ${response.status})`);
+        return null;
+    }
+    return await response.json();
   } catch (error) {
     console.error("Error fetching pokemon species:", error);
     return null;
@@ -103,18 +107,32 @@ export const fetchPokemonSpecies = async (idOrName) => {
 };
 
 export const fetchPokemonFullDetails = async (idOrName) => {
+  if (!idOrName) return null;
   try {
-    const [pokemon, species] = await Promise.all([
-      fetch(`${BASE_URL}/pokemon/${idOrName}`).then(res => res.json()),
-      fetchPokemonSpecies(idOrName)
-    ]);
+    const pokemonResponse = await fetch(`${BASE_URL}/pokemon/${idOrName}`);
+    
+    if (!pokemonResponse.ok) {
+        console.error(`Pokemon ${idOrName} not found in primary database.`);
+        return null;
+    }
+
+    const pokemon = await pokemonResponse.json();
+    
+    // Species data is optional but highly recommended. 
+    // We don't want to crash if species fails but pokemon succeeds.
+    let species = null;
+    try {
+        species = await fetchPokemonSpecies(idOrName);
+    } catch (e) {
+        console.warn(`Species data fetch failed for ${idOrName}, continuing with partial data.`);
+    }
 
     return {
       ...pokemon,
       speciesData: species
     };
   } catch (error) {
-    console.error("Error fetching full pokemon details:", error);
+    console.error("Critical error in fetchPokemonFullDetails:", error);
     return null;
   }
 };

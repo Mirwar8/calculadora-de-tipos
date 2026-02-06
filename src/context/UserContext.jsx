@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
+    console.log('UserProvider: starting');
     const [userData, setUserData] = useState({
         name: 'Pro Trainer',
         rank: 'Master Ball',

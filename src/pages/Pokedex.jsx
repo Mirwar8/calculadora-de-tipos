@@ -6,17 +6,6 @@ import TypeBadge from '../components/TypeBadge';
 import { useTeam } from '../hooks/useTeam';
 import { TYPE_LIST, TYPES } from '../utils/pokemonTypes';
 
-const expandWithGenderVariations = (list) => {
-    return list.flatMap(p => {
-        const expanded = [p];
-        if (p.femaleImage) {
-            expanded.push({ ...p, id: `${p.id}-f`, name: `${p.name} ♀`, image: p.femaleImage, isFemale: true });
-            expanded[0].name = `${p.name} ♂`;
-        }
-        return expanded;
-    });
-};
-
 // Generation ID ranges
 const GENERATION_RANGES = {
     1: { start: 1, end: 151 },
@@ -138,8 +127,7 @@ const Pokedex = () => {
                     details.sort((a, b) => a.id - b.id);
                 }
 
-                const expanded = expandWithGenderVariations(details);
-                setPokemonList(expanded);
+                setPokemonList(details);
                 setHasMore(false); // Disable pagination when searching/filtering
             } else {
                 setPokemonList([]);
@@ -251,9 +239,7 @@ const Pokedex = () => {
             const detailsPromises = data.results.map(p => fetchPokemonDetails(p.url));
             const details = await Promise.all(detailsPromises);
 
-            const expandedDetails = expandWithGenderVariations(details);
-
-            setPokemonList(expandedDetails);
+            setPokemonList(details);
             setOffset(pageSize);
         }
     };
@@ -267,8 +253,7 @@ const Pokedex = () => {
             if (nextBatch.length > 0) {
                 const detailsPromises = nextBatch.map(p => fetchPokemonDetails(p.url));
                 const details = await Promise.all(detailsPromises);
-                const expanded = expandWithGenderVariations(details);
-                setPokemonList(prev => [...prev, ...expanded]);
+                setPokemonList(prev => [...prev, ...details]);
                 setOffset(prev => prev + pageSize);
             }
             if (offset + pageSize >= filteredPool.length) {
@@ -280,8 +265,7 @@ const Pokedex = () => {
             if (data && data.results) {
                 const detailsPromises = data.results.map(p => fetchPokemonDetails(p.url));
                 const details = await Promise.all(detailsPromises);
-                const expanded = expandWithGenderVariations(details);
-                setPokemonList(prev => [...prev, ...expanded]);
+                setPokemonList(prev => [...prev, ...details]);
                 setOffset(prev => prev + pageSize);
             } else {
                 setHasMore(false);
@@ -323,9 +307,7 @@ const Pokedex = () => {
             const detailsPromises = firstBatch.map(p => fetchPokemonDetails(p.url));
             const details = await Promise.all(detailsPromises);
 
-            const expanded = expandWithGenderVariations(details);
-
-            setPokemonList(expanded);
+            setPokemonList(details);
             setOffset(pageSize);
             if (results.length <= pageSize) setHasMore(false);
 
@@ -602,7 +584,7 @@ const Pokedex = () => {
                                 </button>
                             </div>
                             <div
-                                onClick={() => navigate(`/pokemon/${pokemon.id.toString().includes('-f') ? pokemon.id.split('-')[0] : pokemon.id}`)}
+                                onClick={() => navigate(`/pokemon/${pokemon.id}`)}
                                 className="aspect-pokemon bg-slate-50 dark:bg-[#233648] rounded-xl md:rounded-2xl space-fluid-4 flex items-center justify-center overflow-hidden p-3 md:p-4 group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                             >
                                 <img alt={pokemon.name} className="w-full h-full object-contain" src={pokemon.image} />

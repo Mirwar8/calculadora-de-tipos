@@ -33,7 +33,7 @@ const TypeSelector = ({ type1, type2, setType1, setType2 }) => {
                         <select
                             value={type1}
                             onChange={handleType1Change}
-                            className={`w-full bg-slate-50 dark:bg-[#233648] border-none rounded-full py-4 px-6 text-lg font-bold appearance-none cursor-pointer focus:ring-2 focus:ring-primary ${TYPES[type1]?.color} text-white`}
+                            className={`w-full ${TYPES[type1]?.color} border-none rounded-full py-4 px-6 text-lg font-bold appearance-none cursor-pointer focus:ring-2 focus:ring-primary text-white shadow-lg`}
                             style={{ backgroundImage: 'none' }} // Remove default arrow to use custom one
                         >
                             {TYPE_LIST.map((type) => (
@@ -57,7 +57,7 @@ const TypeSelector = ({ type1, type2, setType1, setType2 }) => {
                         <select
                             value={type2}
                             onChange={handleType2Change}
-                            className={`w-full bg-slate-50 dark:bg-[#233648] border-none rounded-full py-4 px-6 text-lg font-bold appearance-none cursor-pointer focus:ring-2 focus:ring-primary ${type2 !== "none" ? TYPES[type2]?.color + ' text-white' : 'text-slate-900 dark:text-white'}`}
+                            className={`w-full border-none rounded-full py-4 px-6 text-lg font-bold appearance-none cursor-pointer focus:ring-2 focus:ring-primary shadow-lg ${type2 !== "none" ? TYPES[type2]?.color + ' text-white' : 'bg-slate-50 dark:bg-[#233648] text-slate-900 dark:text-white'}`}
                             style={{ backgroundImage: 'none' }}
                         >
                             <option value="none" className="bg-white text-slate-900 dark:bg-[#233648] dark:text-white">None</option>

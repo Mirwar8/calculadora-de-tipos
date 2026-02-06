@@ -5,32 +5,70 @@ import { fetchPokemonFullDetails } from '../services/pokeapi';
 import TypeBadge from '../components/TypeBadge';
 import { useTeam } from '../hooks/useTeam';
 
+const EGG_GROUPS_MAP = {
+    'monster': 'Monstruo',
+    'bug': 'Bicho',
+    'flying': 'Volador',
+    'field': 'Campo',
+    'fairy': 'Hada',
+    'grass': 'Planta',
+    'human-like': 'Humanoide',
+    'water1': 'Agua 1',
+    'water2': 'Agua 2',
+    'water3': 'Agua 3',
+    'mineral': 'Mineral',
+    'indeterminate': 'Amorfo',
+    'ditto': 'Ditto',
+    'dragon': 'Dragón',
+    'no-eggs': 'No descubierto'
+};
+
 const PokemonDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [pokemon, setPokemon] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [selectedVersion, setSelectedVersion] = useState('');
     const [language, setLanguage] = useState('es');
     const { addToTeam } = useTeam();
     const [addFeedback, setAddFeedback] = useState(null);
+    const [gender, setGender] = useState('male'); // 'male' or 'female'
+    const [volume, setVolume] = useState(0.5); // Default 50%
 
     useEffect(() => {
+        let isMounted = true;
         const loadPokemon = async () => {
             setLoading(true);
-            const data = await fetchPokemonFullDetails(id);
-            if (data) {
-                setPokemon(data);
-                // Set initial version
-                const versions = data.speciesData.flavor_text_entries
-                    .filter(entry => entry.language.name === 'es' || entry.language.name === 'en')
-                    .map(entry => entry.version.name);
-                const uniqueVersions = [...new Set(versions)];
-                setSelectedVersion(uniqueVersions[0] || '');
+            setError(null);
+            try {
+                const data = await fetchPokemonFullDetails(id);
+                if (!isMounted) return;
+
+                if (data) {
+                    setPokemon(data);
+                    // Set initial version
+                    const entries = data.speciesData?.flavor_text_entries || [];
+                    const versions = entries
+                        .filter(entry => entry.language?.name === 'es' || entry.language?.name === 'en')
+                        .map(entry => entry.version?.name)
+                        .filter(Boolean);
+
+                    const uniqueVersions = [...new Set(versions)];
+                    setSelectedVersion(uniqueVersions[0] || '');
+                    setGender('male');
+                } else {
+                    setError('NOT_FOUND');
+                }
+            } catch (err) {
+                console.error("Failed to load pokemon details:", err);
+                if (isMounted) setError('FETCH_ERROR');
+            } finally {
+                if (isMounted) setLoading(false);
             }
-            setLoading(false);
         };
         loadPokemon();
+        return () => { isMounted = false; };
     }, [id]);
 
     const handleAddToTeam = () => {
@@ -43,7 +81,7 @@ const PokemonDetail = () => {
                 name: a.ability.name,
                 is_hidden: a.is_hidden
             })),
-            image: pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default
+            image: getSprite()
         };
 
         const success = addToTeam(normalizedPokemon);
@@ -67,12 +105,25 @@ const PokemonDetail = () => {
         );
     }
 
-    if (!pokemon) {
+    if (!pokemon && !loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold mb-4">Pokémon not found</h2>
-                    <button onClick={() => navigate('/pokedex')} className="bg-primary text-white px-6 py-2 rounded-lg">Back to List</button>
+            <div className="min-h-screen flex items-center justify-center p-6 bg-pokedex-blue-dark">
+                <div className="bg-black/60 backdrop-blur-xl border-4 border-white/20 p-10 rounded-3xl text-center shadow-2xl max-w-md w-full">
+                    <span className="material-symbols-outlined text-8xl text-red-500 mb-6 scale-125 block">error_outline</span>
+                    <h2 className="text-4xl font-black text-white mb-4 uppercase tracking-[0.1em]">
+                        {error === 'FETCH_ERROR' ? 'System Error' : 'Database Error'}
+                    </h2>
+                    <p className="text-cyan-400 text-xl font-bold mb-8 leading-relaxed">
+                        {error === 'FETCH_ERROR'
+                            ? 'Error contactando con la base de datos de la PokeAPI.'
+                            : 'El espécimen solicitado no ha sido localizado en el índice.'}
+                    </p>
+                    <button
+                        onClick={() => navigate('/pokedex')}
+                        className="w-full bg-cyan-500 hover:bg-cyan-400 text-white py-4 rounded-xl font-black text-xl shadow-lg transform active:scale-95 transition-all border-b-4 border-cyan-700"
+                    >
+                        REGRESAR AL ÍNDICE
+                    </button>
                 </div>
             </div>
         );
@@ -90,8 +141,72 @@ const PokemonDetail = () => {
             .replace(/\n/g, ' ');
     };
 
+    const getLocalizedCategory = () => {
+        if (!pokemon?.speciesData?.genera) return '';
+        const genusEntry = pokemon.speciesData.genera.find(g => g.language.name === language);
+        return genusEntry ? genusEntry.genus : pokemon.speciesData.genera.find(g => g.language.name === 'en')?.genus || '';
+    };
+
+    const getLocalizedEggGroups = () => {
+        if (!pokemon?.speciesData?.egg_groups) return '';
+        return pokemon.speciesData.egg_groups.map(group => {
+            const name = typeof group.name === 'string' ? group.name : '';
+            if (!name) return '';
+            return language === 'es' ? (EGG_GROUPS_MAP[name] || name) : name.charAt(0).toUpperCase() + name.slice(1);
+        }).filter(Boolean).join(', ');
+    };
+
+    const formatHeight = () => {
+        if (!pokemon) return '';
+        const decimeters = pokemon.height;
+        if (language === 'es') {
+            return `${(decimeters / 10).toFixed(1)} m`;
+        } else {
+            const totalInches = decimeters * 3.937;
+            const feet = Math.floor(totalInches / 12);
+            const inches = Math.round(totalInches % 12);
+            return `${feet}'${inches}"`;
+        }
+    };
+
+    const formatWeight = () => {
+        if (!pokemon) return '';
+        const hectograms = pokemon.weight;
+        if (language === 'es') {
+            return `${(hectograms / 10).toFixed(1)} kg`;
+        } else {
+            const lbs = (hectograms * 0.220462).toFixed(1);
+            return `${lbs} lbs`;
+        }
+    };
+
+    const getGenderRatio = () => {
+        if (!pokemon?.speciesData || pokemon.speciesData.gender_rate === -1) {
+            return language === 'es' ? 'Sin género' : 'Genderless';
+        }
+        const femaleRate = pokemon.speciesData.gender_rate;
+        const femalePercentage = (femaleRate / 8) * 100;
+        const malePercentage = 100 - femalePercentage;
+
+        return (
+            <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-blue-400">♂ {malePercentage}%</span>
+                <span className="flex items-center gap-1 text-pink-400">♀ {femalePercentage}%</span>
+            </div>
+        );
+    };
+
+    const playCry = () => {
+        if (pokemon?.cries?.latest) {
+            const audio = new Audio(pokemon.cries.latest);
+            audio.volume = volume;
+            audio.play().catch(e => console.error("Error playing cry:", e));
+        }
+    };
+
     const getDescriptionData = () => {
-        const entry = pokemon.speciesData.flavor_text_entries.find(
+        const entries = pokemon.speciesData?.flavor_text_entries || [];
+        const entry = entries.find(
             e => e.version.name === selectedVersion && e.language.name === language
         );
 
@@ -111,14 +226,17 @@ const PokemonDetail = () => {
     };
 
     const getVersions = () => {
-        const versions = pokemon.speciesData.flavor_text_entries
+        const entries = pokemon.speciesData?.flavor_text_entries || [];
+        const versions = entries
             .filter(entry => entry.language.name === 'es' || entry.language.name === 'en')
             .map(entry => entry.version.name);
         return [...new Set(versions)];
     };
 
     const getSprite = () => {
-        // Many versions map to specific generations
+        if (!pokemon?.sprites) return '';
+        const isFemale = gender === 'female';
+
         const genMap = {
             'red': { gen: 'generation-i', game: 'red-blue' },
             'blue': { gen: 'generation-i', game: 'red-blue' },
@@ -151,13 +269,28 @@ const PokemonDetail = () => {
         };
 
         const config = genMap[selectedVersion];
-        if (config && pokemon.sprites.versions[config.gen] && pokemon.sprites.versions[config.gen][config.game]) {
-            const sprite = pokemon.sprites.versions[config.gen][config.game].front_default;
-            if (sprite) return sprite;
+        if (config) {
+            const genSprites = pokemon.sprites.versions?.[config.gen];
+            const gameSprites = genSprites?.[config.game];
+            if (gameSprites) {
+                const sprite = isFemale ? (gameSprites.front_female || gameSprites.front_default) : gameSprites.front_default;
+                if (sprite) return sprite;
+            }
         }
 
-        return pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default;
+        // Home or Official Artwork
+        const homeSprites = pokemon.sprites.other?.home;
+        if (isFemale && (homeSprites?.front_female || pokemon.sprites.front_female)) {
+            return homeSprites?.front_female || pokemon.sprites.front_female;
+        }
+
+        return pokemon.sprites.other?.['official-artwork']?.front_default
+            || pokemon.sprites.other?.home?.front_default
+            || pokemon.sprites.front_default
+            || '';
     };
+
+    const hasGenderDifference = pokemon.sprites.front_female || (pokemon.sprites.other?.home?.front_female);
 
     const statsMap = {
         'hp': { label: 'HP', color: 'bg-red-500' },
@@ -209,6 +342,24 @@ const PokemonDetail = () => {
                                     <div className="absolute top-4 left-4 z-20">
                                         <span className="bg-red-600 text-white text-fluid-xs font-bold px-2 py-0.5 rounded shadow">REC</span>
                                     </div>
+
+                                    {/* Gender Toggle */}
+                                    {hasGenderDifference && (
+                                        <div className="absolute bottom-4 right-4 z-20 flex gap-2">
+                                            <button
+                                                onClick={() => setGender('male')}
+                                                className={`size-8 sm:size-10 rounded-full flex items-center justify-center font-bold text-fluid-sm transition-all shadow-lg ${gender === 'male' ? 'bg-blue-500 text-white ring-2 ring-white' : 'bg-gray-800/80 text-blue-300 hover:bg-gray-700'}`}
+                                            >
+                                                ♂
+                                            </button>
+                                            <button
+                                                onClick={() => setGender('female')}
+                                                className={`size-8 sm:size-10 rounded-full flex items-center justify-center font-bold text-fluid-sm transition-all shadow-lg ${gender === 'female' ? 'bg-pink-500 text-white ring-2 ring-white' : 'bg-gray-800/80 text-pink-300 hover:bg-gray-700'}`}
+                                            >
+                                                ♀
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between mt-4 px-2">
@@ -218,6 +369,61 @@ const PokemonDetail = () => {
                                     <div className="h-1 w-8 md:w-12 bg-gray-400 rounded-full"></div>
                                 </div>
                                 <span className="material-symbols-outlined text-3xl md:text-4xl text-gray-800 rotate-90">menu</span>
+                            </div>
+
+                            {/* Vital Specs Panel */}
+                            <div className="bg-black/60 backdrop-blur-xl rounded-xl p-5 sm:p-8 border-2 border-white/20 shadow-2xl overflow-safe mb-8">
+                                <h3 className="text-white text-2xl font-black uppercase tracking-widest mb-6 flex items-center gap-3 border-b-2 border-white/10 pb-3">
+                                    <span className="material-symbols-outlined text-3xl text-cyan-400">info</span> {language === 'es' ? 'Datos Biológicos' : 'Biological Data'}
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-12">
+                                    <div className="space-y-2">
+                                        <p className="text-cyan-400 text-base sm:text-lg font-black uppercase tracking-[0.15em]">
+                                            {language === 'es' ? 'Categoría' : 'Category'}
+                                        </p>
+                                        <p className="text-white text-2xl sm:text-3xl font-black capitalize leading-none tracking-tight">{getLocalizedCategory()}</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-cyan-400 text-base sm:text-lg font-black uppercase tracking-[0.15em]">
+                                            {language === 'es' ? 'Grupos Huevo' : 'Egg Groups'}
+                                        </p>
+                                        <p className="text-white text-2xl sm:text-3xl font-black leading-none tracking-tight">{getLocalizedEggGroups()}</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-cyan-400 text-base sm:text-lg font-black uppercase tracking-[0.15em]">
+                                            {language === 'es' ? 'Altura' : 'Height'}
+                                        </p>
+                                        <p className="text-yellow-300 text-3xl sm:text-4xl font-black leading-none">{formatHeight()}</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-cyan-400 text-base sm:text-lg font-black uppercase tracking-[0.15em]">
+                                            {language === 'es' ? 'Peso' : 'Weight'}
+                                        </p>
+                                        <p className="text-yellow-300 text-3xl sm:text-4xl font-black leading-none">{formatWeight()}</p>
+                                    </div>
+                                    <div className="space-y-3 sm:col-span-2 border-t-2 border-white/10 pt-6">
+                                        <p className="text-cyan-400 text-base sm:text-lg font-black uppercase tracking-[0.15em]">
+                                            {language === 'es' ? 'Género' : 'Gender'}
+                                        </p>
+                                        <div className="text-white text-2xl sm:text-3xl font-black">{getGenderRatio()}</div>
+                                    </div>
+                                    <div className="space-y-3 sm:col-span-2 border-t-2 border-white/10 pt-6">
+                                        <p className="text-cyan-400 text-base sm:text-lg font-black uppercase tracking-[0.15em]">
+                                            {language === 'es' ? 'Habilidades' : 'Abilities'}
+                                        </p>
+                                        <div className="flex flex-wrap gap-3">
+                                            {(pokemon.abilities || []).map(a => (
+                                                <span
+                                                    key={a.ability.name}
+                                                    className={`text-sm sm:text-base px-5 py-2 rounded-xl border-4 font-black capitalize ${a.is_hidden ? 'border-yellow-400 text-yellow-300 bg-yellow-400/20' : 'border-cyan-400 text-white bg-cyan-400/20'}`}
+                                                >
+                                                    {a.ability.name.replace(/-/g, ' ')}
+                                                    {a.is_hidden && <span className="ml-2 text-xs uppercase text-yellow-400 underline underline-offset-4 decoration-2">({language === 'es' ? 'Oculta' : 'Hidden'})</span>}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -256,21 +462,21 @@ const PokemonDetail = () => {
                         </div>
 
                         {/* Stats Panel */}
-                        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 sm:p-5 border border-white/10 shadow-lg overflow-safe">
-                            <h3 className="text-white text-fluid-xs font-bold uppercase tracking-wider mb-4 flex items-center space-fluid-2">
-                                <span className="material-symbols-outlined text-sm">bar_chart</span> Base Stats
+                        <div className="bg-black/40 backdrop-blur-xl rounded-xl p-5 sm:p-8 border-2 border-white/20 shadow-2xl overflow-safe mb-8">
+                            <h3 className="text-white text-2xl font-black uppercase tracking-widest mb-6 flex items-center gap-3 border-b-2 border-white/10 pb-3">
+                                <span className="material-symbols-outlined text-3xl text-cyan-400">bar_chart</span> {language === 'es' ? 'Estadísticas Base' : 'Base Stats'}
                             </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-6">
                                 {pokemon.stats.map(s => (
-                                    <div key={s.stat.name} className="grid grid-cols-[3rem_1fr_2rem] gap-3 items-center">
-                                        <span className="text-blue-200 text-fluid-xs font-bold uppercase">{statsMap[s.stat.name]?.label || s.stat.name}</span>
-                                        <div className="h-2.5 bg-black/30 rounded-full overflow-hidden shadow-inner">
+                                    <div key={s.stat.name} className="grid grid-cols-[4.5rem_1fr_3.5rem] gap-6 items-center">
+                                        <span className="text-cyan-400 text-sm sm:text-base font-black uppercase tracking-widest">{statsMap[s.stat.name]?.label || s.stat.name}</span>
+                                        <div className="h-5 bg-black/70 rounded-full overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] border-2 border-white/10">
                                             <div
-                                                className={`h-full ${statsMap[s.stat.name]?.color || 'bg-primary'} rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)] transition-all duration-1000`}
+                                                className={`h-full ${statsMap[s.stat.name]?.color || 'bg-primary'} rounded-full shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-1000`}
                                                 style={{ width: `${Math.min(100, (s.base_stat / 255) * 100)}%` }}
                                             ></div>
                                         </div>
-                                        <span className="text-white text-fluid-xs text-right font-mono">{s.base_stat}</span>
+                                        <span className="text-white text-xl sm:text-2xl text-right font-black">{s.base_stat}</span>
                                     </div>
                                 ))}
                             </div>
@@ -308,6 +514,45 @@ const PokemonDetail = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Cry Player */}
+                        {pokemon.cries?.latest && (
+                            <div className="mt-4 bg-black/40 backdrop-blur-md rounded-xl p-3 border border-white/10 shadow-lg flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                                        <span className="material-symbols-outlined text-primary text-xl">volume_up</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-blue-300 font-bold uppercase tracking-tighter">
+                                            {language === 'es' ? 'Grito del Pokémon' : "Pokémon Cry"}
+                                        </p>
+                                        <p className="text-white text-[10px] font-mono opacity-60">PokeAPI Digital Record</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={playCry}
+                                    className="bg-primary hover:bg-blue-400 text-white size-10 rounded-lg shadow-lg flex items-center justify-center transform active:scale-90 transition-all group shrink-0"
+                                    title={language === 'es' ? 'Reproducir Grito' : 'Play Cry'}
+                                >
+                                    <span className="material-symbols-outlined group-hover:scale-110 transition-transform">play_arrow</span>
+                                </button>
+                                <div className="flex-1 max-w-[100px] ml-4">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.01"
+                                        value={volume}
+                                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                                        className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary"
+                                    />
+                                    <div className="flex justify-between text-[8px] text-blue-300 font-bold mt-1 uppercase">
+                                        <span>Vol</span>
+                                        <span>{Math.round(volume * 100)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Add to Team Button */}
                         <div className="mt-4">

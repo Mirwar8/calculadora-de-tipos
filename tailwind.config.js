@@ -11,6 +11,9 @@ export default {
         "primary": "#137fec",
         "background-light": "#f6f7f8",
         "background-dark": "#101922",
+        "pokedex-blue-dark": "#0a1c2e",
+        "pokedex-blue-light": "#137fec",
+        "dex-dark-screen": "#0c1218",
         "type-fire": "#ff9d55",
         "type-water": "#5090d6",
         "type-grass": "#63bc5a",
@@ -29,6 +32,13 @@ export default {
         "type-steel": "#5a8ea1",
         "type-fairy": "#ec8fe6",
         "type-normal": "#9099a1",
+        // GBA Colors
+        "gba-indigo": "#3f3f9b",
+        "gba-indigo-dark": "#2d2d75",
+        "gba-gray": "#d1d5db",
+        "gba-dark-gray": "#4b5563",
+        "gba-screen-frame": "#1a1a1a",
+        "gba-background": "#0a0a0c",
       },
       fontFamily: {
         "display": ["Inter", "sans-serif"]
@@ -36,6 +46,11 @@ export default {
       borderRadius: {
         "lg": "2rem",
         "xl": "3rem"
+      },
+      boxShadow: {
+        'gba-shell': '0 20px 50px rgba(0,0,0,0.5), inset 2px 2px 4px rgba(255,255,255,0.2), inset -2px -2px 4px rgba(0,0,0,0.4)',
+        'gba-button': '0 4px 0 rgba(0,0,0,0.3), inset 1px 1px 1px rgba(255,255,255,0.5)',
+        'gba-button-pressed': 'inset 2px 2px 4px rgba(0,0,0,0.5)',
       },
       screens: {
         '3xl': '1600px',
@@ -47,4 +62,6 @@ export default {
     },
   },
   plugins: [],
+  // Add custom CSS for GBA emulator styles
+  // This will be injected into the generated CSS
 }

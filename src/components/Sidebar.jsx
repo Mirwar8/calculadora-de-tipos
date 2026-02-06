@@ -42,6 +42,10 @@ const Sidebar = () => {
                         <span className="material-symbols-outlined text-fluid-lg">group_work</span>
                         <span className="text-fluid-sm">Team Builder</span>
                     </Link>
+                    <Link className={getLinkClass('/emulator')} to="/emulator">
+                        <span className="material-symbols-outlined text-fluid-lg">sports_esports</span>
+                        <span className="text-fluid-sm">GBA Emulator</span>
+                    </Link>
                     <a className="flex items-center space-fluid-3 px-4 py-3 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors touch-target" href="#">
                         <span className="material-symbols-outlined text-fluid-lg">analytics</span>
                         <span className="text-fluid-sm">Move Analytics</span>

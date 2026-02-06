@@ -1,4 +1,3 @@
-
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -6,6 +5,7 @@ import { UserProvider } from '../context/UserContext';
 import EditProfileModal from './EditProfileModal';
 
 const Layout = () => {
+    console.log('Layout: rendering');
     return (
         <UserProvider>
             <div className="min-h-screen bg-white dark:bg-background-dark text-slate-900 transition-colors duration-300">

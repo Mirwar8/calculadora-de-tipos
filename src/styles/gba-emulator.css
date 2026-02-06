@@ -1,0 +1,101 @@
+/* GBA Emulator Custom Styles */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+@layer utilities {
+  .font-pixel {
+    font-family: 'VT323', monospace;
+  }
+  
+  .gba-curve {
+    border-radius: 80px 80px 100px 100px / 50px 50px 70px 70px;
+  }
+  
+  .screen-bezel-curve {
+    border-radius: 15px 15px 30px 30px / 10px 10px 25px 25px;
+  }
+  
+  .scanlines {
+    background: linear-gradient(
+      to bottom,
+      rgba(255,255,255,0),
+      rgba(255,255,255,0) 50%,
+      rgba(0,0,0,0.1) 50%,
+      rgba(0,0,0,0.1)
+    );
+    background-size: 100% 4px;
+  }
+  
+  .crt-effect {
+    animation: flicker 0.15s infinite;
+  }
+  
+  @keyframes flicker {
+    0% { opacity: 0.97; }
+    50% { opacity: 1; }
+    100% { opacity: 0.98; }
+  }
+  
+  .gba-startup-screen {
+    background: linear-gradient(45deg, #2a1a3e, #3a2a5e);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .gba-startup-screen::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(255,255,255,0.1),
+      transparent
+    );
+    animation: shine 3s infinite;
+  }
+  
+  @keyframes shine {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Custom slider styling */
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #1e40af;
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #1e40af;
+  }
+  
+  /* GBA Button Press Animation */
+  .gba-button-active {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  }
+  
+  /* Virtual D-pad styling */
+  .d-pad-bg {
+    background: radial-gradient(circle at center, #374151, #1f2937);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+  }
+  
+  /* Shoulder button shape */
+  .shoulder-button {
+    clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+  }
+}
