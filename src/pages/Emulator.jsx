@@ -40,7 +40,7 @@ const Emulator = () => {
         if (emulatorCore) {
             emulatorCore.setVolume(newVolume);
         }
-    }, [emulatorCore]);
+    }, [emulatorCore, setVolume]);
 
     // Serialization Helpers for binary data in LocalStorage
     const arrayBufferToBase64 = (buffer) => {
@@ -111,6 +111,11 @@ const Emulator = () => {
         }
     }, [emulatorCore]);
 
+    const handleCloseGame = useCallback(() => {
+        closeGame();
+        setIsSettingsOpen(false);
+    }, [closeGame]);
+
     return (
         <div className="w-full h-[calc(100vh-12rem)] flex items-center justify-center overflow-hidden">
             <div className="w-full max-w-4xl px-4 flex flex-col items-center">
@@ -127,7 +132,7 @@ const Emulator = () => {
                                 isPlaying={isPlaying}
                                 isPaused={isPaused}
                                 volume={volume}
-                                onEmulatorReady={setEmulatorCore}
+                                onEmulatorReady={setEmulatorInstance}
                                 onPlayPause={handlePlayPause}
                                 onOpenSettings={() => setIsSettingsOpen(true)}
                             />
@@ -145,6 +150,7 @@ const Emulator = () => {
                                 onSaveState={handleSaveState}
                                 onLoadState={handleLoadState}
                                 onReset={handleReset}
+                                onCloseGame={handleCloseGame}
                             />
                         </SettingsModal>
                     </div>

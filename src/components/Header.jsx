@@ -89,10 +89,10 @@ const Header = () => {
                         <h2 className="text-lg sm:text-xl font-bold leading-tight tracking-tight dark:text-white">TypeCoverage</h2>
                     </Link>
                     <nav className="hidden md:flex items-center gap-4 lg:gap-6">
-                        <Link className="text-fluid-sm font-semibold text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors" to="/">Calculator</Link>
-                        <Link className="text-fluid-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" to="/pokedex">Pokedex</Link>
+                        <Link className="text-fluid-sm font-semibold text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors" to="/">Home</Link>
+                        <Link className="text-fluid-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" to="/calculator">Calculator</Link>
+                        <Link className="text-fluid-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" to="/pokedex">Pokédex</Link>
                         <Link className="text-fluid-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" to="/teamBuilder">Team Builder</Link>
-                        <a className="text-fluid-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">Abilities</a>
                     </nav>
                 </div>
                 <div className="flex flex-1 justify-end gap-2 sm:gap-4 max-w-xl ml-4 sm:ml-8">
@@ -296,7 +296,8 @@ const MobileMenuDrawer = ({ isOpen, onClose, userData }) => {
 
                 <nav className="p-4 flex flex-col gap-2 overflow-y-auto">
                     {[
-                        { to: '/', icon: 'calculate', label: 'Type Calculator' },
+                        { to: '/', icon: 'home', label: 'Home' },
+                        { to: '/calculator', icon: 'calculate', label: 'Type Calculator' },
                         { to: '/pokedex', icon: 'menu_book', label: 'Pokédex' },
                         { to: '/teamBuilder', icon: 'group_work', label: 'Team Builder' },
                         { to: '#', icon: 'analytics', label: 'Move Analytics' },

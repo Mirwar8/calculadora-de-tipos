@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const EmulatorSettings = ({ volume, onVolumeChange, onSaveState, onLoadState, onReset }) => {
+const EmulatorSettings = ({ volume, onVolumeChange, onSaveState, onLoadState, onReset, onCloseGame }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
@@ -38,6 +38,12 @@ const EmulatorSettings = ({ volume, onVolumeChange, onSaveState, onLoadState, on
     const handleReset = () => {
         if (window.confirm('Are you sure you want to reset the game? Any unsaved progress will be lost.')) {
             onReset();
+        }
+    };
+
+    const handleCloseGame = () => {
+        if (window.confirm('Are you sure you want to close the game? Any unsaved progress will be lost.')) {
+            onCloseGame();
         }
     };
 
@@ -159,9 +165,12 @@ const EmulatorSettings = ({ volume, onVolumeChange, onSaveState, onLoadState, on
                         <span className="text-xs font-bold block mt-1">RESET</span>
                     </button>
 
-                    <button className="bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg border border-white/10 transition-colors">
-                        <span className="material-symbols-outlined text-sm">tune</span>
-                        <span className="text-xs font-bold block mt-1">SETTINGS</span>
+                    <button
+                        onClick={handleCloseGame}
+                        className="bg-red-600/20 hover:bg-red-600/40 text-red-400 py-2 rounded-lg border border-red-600/30 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-sm">close</span>
+                        <span className="text-xs font-bold block mt-1">CLOSE</span>
                     </button>
                 </div>
             </div>

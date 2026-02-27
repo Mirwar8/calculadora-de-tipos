@@ -20,7 +20,7 @@ const Landing = () => {
             color: 'bg-blue-500'
         },
         {
-            icon: 'sword',
+            icon: 'bolt',
             title: 'Offensive Coverage',
             description: 'Discover which types your attacks are super effective against',
             color: 'bg-red-500'
@@ -30,20 +30,13 @@ const Landing = () => {
             title: 'Instant Results',
             description: 'Get real-time calculations as you select different type combinations',
             color: 'bg-green-500'
-        },
-        {
-            icon: 'psychology',
-            title: 'Smart Insights',
-            description: 'AI-powered recommendations for optimal team building strategies',
-            color: 'bg-purple-500'
         }
     ];
 
     const stats = [
         { number: '18', label: 'Different Types' },
         { number: '324', label: 'Type Combinations' },
-        { number: '1000+', label: 'Pokémon Analyzed' },
-        { number: '50K+', label: 'Battles Simulated' }
+        { number: '1000+', label: 'Pokémon Analyzed' }
     ];
 
     useEffect(() => {
@@ -192,30 +185,40 @@ const Landing = () => {
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 bg-gradient-to-r from-primary to-blue-600">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-                    <h2 className="text-4xl sm:text-5xl font-black text-white">
-                        Ready to Champion Your Team?
-                    </h2>
-                    <p className="text-xl text-white/90 max-w-2xl mx-auto">
-                        Start building unbeatable teams with our advanced type analysis tools. 
-                        Free to use, powerful enough for pros.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link
-                            to="/calculator"
-                            className="inline-flex items-center gap-3 bg-white text-primary px-8 py-4 rounded-full font-bold text-lg hover:bg-slate-100 transition-all shadow-lg touch-target"
-                        >
-                            <span className="material-symbols-outlined">play_arrow</span>
-                            Use Calculator Free
-                        </Link>
-                        <Link
-                            to="/teamBuilder"
-                            className="inline-flex items-center gap-3 bg-white/20 backdrop-blur text-white px-8 py-4 rounded-full font-bold text-lg border-2 border-white/30 hover:bg-white/30 transition-all touch-target"
-                        >
-                            <span className="material-symbols-outlined">groups</span>
-                            Team Builder
-                        </Link>
+            <section className="py-24 bg-slate-900 relative overflow-hidden">
+                {/* Subtle background glow */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/20 rounded-full blur-[100px]" />
+                </div>
+                <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-10 sm:p-14 text-center space-y-7 shadow-2xl">
+                        <div className="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 text-primary px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest">
+                            <span className="material-symbols-outlined text-base">trophy</span>
+                            For Competitive Players
+                        </div>
+                        <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight">
+                            Ready to Champion<br className="hidden sm:block" /> Your Team?
+                        </h2>
+                        <p className="text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
+                            Start building unbeatable teams with our advanced type analysis tools.
+                            Free to use, powerful enough for pros.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+                            <Link
+                                to="/calculator"
+                                className="inline-flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-lg shadow-primary/30 touch-target"
+                            >
+                                <span className="material-symbols-outlined">calculate</span>
+                                Type Calculator
+                            </Link>
+                            <Link
+                                to="/teamBuilder"
+                                className="inline-flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-bold text-lg border border-white/20 hover:border-white/40 transition-all touch-target"
+                            >
+                                <span className="material-symbols-outlined">group_work</span>
+                                Team Builder
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>

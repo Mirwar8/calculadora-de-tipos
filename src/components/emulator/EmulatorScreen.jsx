@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useEmulator } from '../../context/EmulatorContext';
 import MobileControls from './MobileControls';
 import EmulatorStatusBar from './EmulatorStatusBar';
 
@@ -22,6 +23,7 @@ const GBA_SCRIPTS = [
 ];
 
 const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady, onPlayPause, onOpenSettings }) => {
+    const { emulatorInstance: contextEmulatorInstance, setEmulatorInstance: setContextEmulatorInstance } = useEmulator();
     const canvasRef = useRef(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [emulatorInstance, setEmulatorInstance] = useState(null);
@@ -67,85 +69,21 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
 
     // Initialize Emulator when scripts and canvas are ready
     useEffect(() => {
-        if (scriptsLoaded && canvasRef.current && !emulatorInstance && window.GameBoyAdvance) {
-            try {
-                console.log('Initializing GBA Emulator...');
-                const gba = new window.GameBoyAdvance();
-
-                // Configure GBA
-                gba.setCanvas(canvasRef.current);
-                gba.logLevel = gba.LOG_ERROR;
-
-                // Add logger to catch crashes
-                gba.setLogger((level, error) => {
-                    console.error('GBA Emulator Error:', error);
-                    gba.pause();
-
-                    let errorMessage = 'Unknown Error';
-                    if (typeof error === 'string') {
-                        errorMessage = error;
-                    } else if (error && error.message) {
-                        errorMessage = error.message;
-                    } else if (error) {
-                        try {
-                            errorMessage = JSON.stringify(error);
-                        } catch (e) {
-                            errorMessage = '' + error;
-                        }
-                    }
-                    setLoadError(`Emulator Crashed: ${errorMessage}`);
-                });
-
-                // Monkey-patch ERROR and logStackTrace
-                gba.ERROR = function (error) {
-                    this.log(this.LOG_ERROR, error);
-                };
-
-                gba.logStackTrace = function (stack) {
-                    console.error('Stack Trace:', stack);
-                };
-
-                // Monkey-patch Save/Load State Functionality (Raw Buffers for LocalStorage)
-                gba.saveState = function () {
-                    return {
-                        ram: this.mmu.memory[this.mmu.REGION_WORKING_RAM].buffer.slice(0),
-                        iram: this.mmu.memory[this.mmu.REGION_WORKING_IRAM].buffer.slice(0)
-                    };
-                };
-
-                gba.loadState = function (state) {
-                    this.mmu.memory[this.mmu.REGION_WORKING_RAM].replaceData(state.ram);
-                    this.mmu.memory[this.mmu.REGION_WORKING_IRAM].replaceData(state.iram);
-                };
-
-                // Monkey-patch setCanvas to strictly use our offscreen canvas logic
-                // We don't want GBA.js touching the DOM or scaling logic at all.
-                gba.setCanvas = function (canvas) {
-                    this.context = canvas.getContext('2d');
-                    this.video.setBacking(this.context);
-                };
-
-                // Compulsory BIOS loading handling
-                const loadBiosAndInit = async () => {
-                    try {
-                        const res = await fetch('/emulator/resources/bios.bin');
-                        if (!res.ok) throw new Error('BIOS not found');
-                        const bios = await res.arrayBuffer();
-                        gba.setBios(bios);
-                        console.log('GBA BIOS loaded successfully');
-                    } catch (err) {
-                        console.warn('GBA BIOS warning:', err);
-                    }
-
-                    // Create an isolated offscreen buffer for the GBA to draw into.
-                    // This guarantees strict 240x160 rendering regardless of standard canvas nonsense.
+        if (scriptsLoaded && canvasRef.current && window.GameBoyAdvance) {
+            // Check if emulator instance already exists in context
+            if (contextEmulatorInstance) {
+                console.log('Re-attaching existing emulator instance...');
+                try {
+                    // Create new offscreen canvas for re-attachment
                     const offscreenCanvas = document.createElement('canvas');
                     offscreenCanvas.width = 240;
                     offscreenCanvas.height = 160;
-                    gba.setCanvas(offscreenCanvas);
-
+                    
+                    // Re-attach canvas to existing instance
+                    contextEmulatorInstance.setCanvas(offscreenCanvas);
+                    
                     // Hook into the video draw callback to paint our visible canvas
-                    gba.video.drawCallback = () => {
+                    contextEmulatorInstance.video.drawCallback = () => {
                         if (canvasRef.current) {
                             const ctx = canvasRef.current.getContext('2d', { alpha: false });
                             // Draw 1:1. CSS handles the visual scaling ("zooming").
@@ -153,23 +91,118 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                         }
                     };
 
-                    setEmulatorInstance(gba);
-                    onEmulatorReady(gba);
-                };
+                    setEmulatorInstance(contextEmulatorInstance);
+                    onEmulatorReady(contextEmulatorInstance);
+                } catch (err) {
+                    console.error('Error re-attaching emulator instance:', err);
+                    setLoadError('Failed to re-attach emulator: ' + err.message);
+                }
+            } else if (!emulatorInstance) {
+                // Create new emulator instance
+                try {
+                    console.log('Initializing GBA Emulator...');
+                    const gba = new window.GameBoyAdvance();
 
-                loadBiosAndInit();
+                    // Configure GBA
+                    gba.setCanvas(canvasRef.current);
+                    gba.logLevel = gba.LOG_ERROR;
 
-                return () => {
-                    if (gba && typeof gba.pause === 'function') {
+                    // Add logger to catch crashes
+                    gba.setLogger((level, error) => {
+                        console.error('GBA Emulator Error:', error);
                         gba.pause();
-                    }
-                };
-            } catch (err) {
-                console.error('General error in Emulator initialization:', err);
-                setLoadError('Initialization failed: ' + err.message);
+
+                        let errorMessage = 'Unknown Error';
+                        if (typeof error === 'string') {
+                            errorMessage = error;
+                        } else if (error && error.message) {
+                            errorMessage = error.message;
+                        } else if (error) {
+                            try {
+                                errorMessage = JSON.stringify(error);
+                            } catch (e) {
+                                errorMessage = '' + error;
+                            }
+                        }
+                        setLoadError(`Emulator Crashed: ${errorMessage}`);
+                    });
+
+                    // Monkey-patch ERROR and logStackTrace
+                    gba.ERROR = function (error) {
+                        this.log(this.LOG_ERROR, error);
+                    };
+
+                    gba.logStackTrace = function (stack) {
+                        console.error('Stack Trace:', stack);
+                    };
+
+                    // Monkey-patch Save/Load State Functionality (Raw Buffers for LocalStorage)
+                    gba.saveState = function () {
+                        return {
+                            ram: this.mmu.memory[this.mmu.REGION_WORKING_RAM].buffer.slice(0),
+                            iram: this.mmu.memory[this.mmu.REGION_WORKING_IRAM].buffer.slice(0)
+                        };
+                    };
+
+                    gba.loadState = function (state) {
+                        this.mmu.memory[this.mmu.REGION_WORKING_RAM].replaceData(state.ram);
+                        this.mmu.memory[this.mmu.REGION_WORKING_IRAM].replaceData(state.iram);
+                    };
+
+                    // Monkey-patch setCanvas to strictly use our offscreen canvas logic
+                    // We don't want GBA.js touching the DOM or scaling logic at all.
+                    gba.setCanvas = function (canvas) {
+                        this.context = canvas.getContext('2d');
+                        this.video.setBacking(this.context);
+                    };
+
+                    // Compulsory BIOS loading handling
+                    const loadBiosAndInit = async () => {
+                        try {
+                            const res = await fetch('/emulator/resources/bios.bin');
+                            if (!res.ok) throw new Error('BIOS not found');
+                            const bios = await res.arrayBuffer();
+                            gba.setBios(bios);
+                            console.log('GBA BIOS loaded successfully');
+                        } catch (err) {
+                            console.warn('GBA BIOS warning:', err);
+                        }
+
+                        // Create an isolated offscreen buffer for the GBA to draw into.
+                        // This guarantees strict 240x160 rendering regardless of standard canvas nonsense.
+                        const offscreenCanvas = document.createElement('canvas');
+                        offscreenCanvas.width = 240;
+                        offscreenCanvas.height = 160;
+                        gba.setCanvas(offscreenCanvas);
+
+                        // Hook into the video draw callback to paint our visible canvas
+                        gba.video.drawCallback = () => {
+                            if (canvasRef.current) {
+                                const ctx = canvasRef.current.getContext('2d', { alpha: false });
+                                // Draw 1:1. CSS handles the visual scaling ("zooming").
+                                ctx.drawImage(offscreenCanvas, 0, 0);
+                            }
+                        };
+
+                        setEmulatorInstance(gba);
+                        setContextEmulatorInstance(gba);
+                        onEmulatorReady(gba);
+                    };
+
+                    loadBiosAndInit();
+
+                    return () => {
+                        if (gba && typeof gba.pause === 'function') {
+                            gba.pause();
+                        }
+                    };
+                } catch (err) {
+                    console.error('General error in Emulator initialization:', err);
+                    setLoadError('Initialization failed: ' + err.message);
+                }
             }
         }
-    }, [scriptsLoaded, onEmulatorReady, emulatorInstance]);
+    }, [scriptsLoaded, onEmulatorReady, emulatorInstance, contextEmulatorInstance, setContextEmulatorInstance]);
 
     // Handle ROM loading
     useEffect(() => {
