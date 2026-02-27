@@ -67,8 +67,7 @@ const RomLoader = ({ onRomLoad }) => {
                     <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mb-6 shadow-2xl">
                         <span className="material-symbols-outlined text-white text-6xl">sports_esports</span>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Load Game</h2>
-                    <p className="text-gray-400">Insert a GBA ROM cartridge to start playing</p>
+
                 </div>
 
                 <div

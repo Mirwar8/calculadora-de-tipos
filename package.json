@@ -1,7 +1,8 @@
 {
-  "name": "calculadora-de-tipos",
+  "name": "blood-type-compatibility-calculator",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A modern blood type compatibility calculator with donation and transfusion information",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 import { useUser } from '../context/UserContext';
+import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
-    const { theme, toggleTheme } = useTheme();
+    const { theme } = useTheme();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -136,6 +137,9 @@ const Header = () => {
                     </div>
 
                     <div className="flex gap-1 sm:gap-2 relative" ref={menuRef}>
+                        {/* Theme Toggle */}
+                        <ThemeToggle />
+                        
                         {/* Mobile Search Toggle */}
                         <button
                             onClick={() => setShowMobileSearch(!showMobileSearch)}

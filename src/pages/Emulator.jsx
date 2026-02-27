@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useEmulator } from '../context/EmulatorContext';
 import EmulatorScreen from '../components/emulator/EmulatorScreen';
 import RomLoader from '../components/emulator/RomLoader';
 import EmulatorSettings from '../components/emulator/EmulatorSettings';
@@ -6,26 +7,27 @@ import EmulatorStatusBar from '../components/emulator/EmulatorStatusBar';
 import SettingsModal from '../components/emulator/SettingsModal';
 
 const Emulator = () => {
-    const [romData, setRomData] = useState(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [volume, setVolume] = useState(0.75);
-    const [isPaused, setIsPaused] = useState(false);
-    const [emulatorCore, setEmulatorCore] = useState(null);
+    const { 
+        romData, 
+        isPlaying, 
+        volume, 
+        isPaused, 
+        emulatorInstance: emulatorCore,
+        loadRom, 
+        closeGame, 
+        togglePause,
+        setVolume,
+        setEmulatorInstance
+    } = useEmulator();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const handleRomLoad = useCallback((rom) => {
-        setRomData(rom);
-        setIsPlaying(true);
-        setIsPaused(false);
-    }, []);
+        loadRom(rom);
+    }, [loadRom]);
 
     const handlePlayPause = useCallback(() => {
-        if (isPlaying && !isPaused) {
-            setIsPaused(true);
-        } else if (isPlaying && isPaused) {
-            setIsPaused(false);
-        }
-    }, [isPlaying, isPaused]);
+        togglePause();
+    }, [togglePause]);
 
     const handleReset = useCallback(() => {
         if (emulatorCore) {
