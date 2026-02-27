@@ -86,7 +86,7 @@ const Landing = () => {
             </section>
 
             {/* Interactive Demo Section */}
-            <section className="py-20 bg-white dark:bg-background-dark">
+            <section className="py-20 bg-transparent">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center space-y-4 mb-12">
                         <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white">
@@ -119,9 +119,9 @@ const Landing = () => {
             </section>
 
             {/* Features Grid */}
-            <section className="py-20 bg-slate-50 dark:bg-slate-900">
+            <section className="py-24 bg-transparent pt-32">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center space-y-4 mb-16">
+                    <div className="text-center space-y-4 mb-20">
                         <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white">
                             Everything You Need to Win
                         </h2>
@@ -130,7 +130,7 @@ const Landing = () => {
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                         {features.map((feature, index) => (
                             <div
                                 key={index}
@@ -158,9 +158,9 @@ const Landing = () => {
             </section>
 
             {/* Stats Section */}
-            <section className="py-20 bg-white dark:bg-background-dark">
+            <section className="py-24 bg-transparent pt-32">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center space-y-4 mb-16">
+                    <div className="text-center space-y-4 mb-20">
                         <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white">
                             Trusted by the Community
                         </h2>
@@ -169,7 +169,7 @@ const Landing = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-4xl mx-auto items-center justify-items-center">
                         {stats.map((stat, index) => (
                             <div key={index} className="text-center space-y-2">
                                 <div className="text-4xl sm:text-5xl font-black text-primary">
@@ -185,7 +185,7 @@ const Landing = () => {
             </section>
 
             {/* CTA Section */}
-            <section className="py-24 bg-slate-900 relative overflow-hidden">
+            <section className="py-32 bg-transparent relative overflow-hidden">
                 {/* Subtle background glow */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/20 rounded-full blur-[100px]" />
