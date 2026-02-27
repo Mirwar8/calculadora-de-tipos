@@ -136,17 +136,93 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                         console.error('Stack Trace:', stack);
                     };
 
-                    // Monkey-patch Save/Load State Functionality (Raw Buffers for LocalStorage)
-                    gba.saveState = function () {
-                        return {
-                            ram: this.mmu.memory[this.mmu.REGION_WORKING_RAM].buffer.slice(0),
-                            iram: this.mmu.memory[this.mmu.REGION_WORKING_IRAM].buffer.slice(0)
-                        };
+                    // Savestates using gba.js native freeze() + Serializer
+                    gba.saveStateCustom = function (callback) {
+                        try {
+                            const frost = this.freeze();
+                            const blob = window.Serializer.serialize(frost);
+                            const reader = new FileReader();
+                            reader.readAsDataURL(blob);
+                            reader.onloadend = () => {
+                                if (callback) callback(reader.result);
+                            };
+                        } catch (e) {
+                            console.error('Error in saveStateCustom:', e);
+                        }
                     };
 
-                    gba.loadState = function (state) {
-                        this.mmu.memory[this.mmu.REGION_WORKING_RAM].replaceData(state.ram);
-                        this.mmu.memory[this.mmu.REGION_WORKING_IRAM].replaceData(state.iram);
+                    gba.loadStateCustom = function (dataUrl, callback) {
+                        try {
+                            fetch(dataUrl)
+                                .then(res => res.blob())
+                                .then(blob => {
+                                    window.Serializer.deserialize(blob, (frost) => {
+                                        this.defrost(frost);
+                                        
+                                        // Forzar un avance para que la pantalla se actualice instantaneamente tras cargar
+                                        try {
+                                            this.advanceFrame();
+                                        } catch (e) {
+                                            console.warn("Error force-advancing frame after load:", e);
+                                        }
+
+                                        // Si el emulador estaba corriendo, reiniciarlo para evitar congelamiento
+                                        if (this.paused === false) {
+                                            this.runStable();
+                                        }
+                                        if (callback) callback();
+                                    });
+                                })
+                                .catch(e => console.error('Error fetching state blob:', e));
+                        } catch (e) {
+                            console.error('Error in loadStateCustom:', e);
+                        }
+                    };
+
+                    // Fast Forward Implementation
+                    gba.fastForwardActive = false;
+                    
+                    gba.runStable = function() {
+                        if (this.interval) return;
+                        let self = this;
+                        this.paused = false;
+
+                        const runFunc = function() {
+                            try {
+                                if (self.paused) return;
+                                
+                                if (self.fastForwardActive) {
+                                    // Procesar multiples frames lógicos por cada refresco visual (Velocidad x3)
+                                    // Y silenciar el audio extra para evitar crujidos/lag
+                                    self.audio.pause(true);
+                                    for(let i = 0; i < 3; i++) {
+                                        self.advanceFrame();
+                                    }
+                                } else {
+                                    if(self.audio.context.state === 'suspended' && !self.paused) {
+                                        self.audio.pause(false);
+                                    }
+                                    // Velocidad normal (1 frame)
+                                    self.advanceFrame();
+                                }
+                                
+                                window.queueFrame(runFunc);
+                            } catch(exception) {
+                                self.ERROR(exception);
+                                if (exception.stack) self.logStackTrace(exception.stack.split('\\n'));
+                                throw exception;
+                            }
+                        };
+                        window.queueFrame(runFunc);
+                    };
+
+                    gba.setFastForward = function(active) {
+                        this.fastForwardActive = active;
+                        if (active) {
+                            this.audio.pause(true); // Must pause audio to prevent crackling/desync
+                        } else if (!this.paused) {
+                            this.audio.pause(false);
+                        }
                     };
 
                     // Monkey-patch setCanvas to strictly use our offscreen canvas logic

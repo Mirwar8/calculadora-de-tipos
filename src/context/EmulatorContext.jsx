@@ -16,11 +16,13 @@ export const EmulatorProvider = ({ children }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [volume, setVolume] = useState(0.75);
+    const [fastForward, setFastForward] = useState(false);
 
     const loadRom = useCallback((data) => {
         setRomData(data);
         setIsPlaying(true);
         setIsPaused(false);
+        setFastForward(false);
     }, []);
 
     const closeGame = useCallback(() => {
@@ -49,7 +51,9 @@ export const EmulatorProvider = ({ children }) => {
         setIsPaused,
         togglePause,
         volume,
-        setVolume
+        setVolume,
+        fastForward,
+        setFastForward
     };
 
     return (

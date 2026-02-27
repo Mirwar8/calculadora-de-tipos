@@ -12,6 +12,8 @@ const Emulator = () => {
         isPlaying, 
         volume, 
         isPaused, 
+        fastForward,
+        setFastForward,
         emulatorInstance: emulatorCore,
         loadRom, 
         closeGame, 
@@ -42,6 +44,13 @@ const Emulator = () => {
         }
     }, [emulatorCore, setVolume]);
 
+    const handleToggleFastForward = useCallback((active) => {
+        setFastForward(active);
+        if (emulatorCore && typeof emulatorCore.setFastForward === 'function') {
+            emulatorCore.setFastForward(active);
+        }
+    }, [emulatorCore, setFastForward]);
+
     // Serialization Helpers for binary data in LocalStorage
     const arrayBufferToBase64 = (buffer) => {
         let binary = '';
@@ -67,19 +76,23 @@ const Emulator = () => {
         if (emulatorCore && emulatorCore.mmu && emulatorCore.mmu.cart) {
             try {
                 const gameCode = emulatorCore.mmu.cart.code || 'GENERIC';
-                const rawState = emulatorCore.saveState();
-
-                // Serialize buffers to Base64
-                const serializedState = {
-                    ram: arrayBufferToBase64(rawState.ram),
-                    iram: arrayBufferToBase64(rawState.iram)
-                };
-
-                localStorage.setItem(`gbaSave_${gameCode}`, JSON.stringify(serializedState));
-                console.log(`Saved state for game: ${gameCode}`);
+                
+                if (typeof emulatorCore.saveStateCustom === 'function') {
+                    emulatorCore.saveStateCustom((dataUrl) => {
+                        localStorage.setItem(`gbaSaveFull_${gameCode}`, dataUrl);
+                        console.log(`Saved FULL state for game: ${gameCode}`);
+                    });
+                } else {
+                    // Legacy fallback
+                    const rawState = emulatorCore.saveState();
+                    const serializedState = {
+                        ram: arrayBufferToBase64(rawState.ram),
+                        iram: arrayBufferToBase64(rawState.iram)
+                    };
+                    localStorage.setItem(`gbaSave_${gameCode}`, JSON.stringify(serializedState));
+                }
             } catch (error) {
                 console.error('Failed to save state:', error);
-                throw error;
             }
         }
     }, [emulatorCore]);
@@ -88,25 +101,27 @@ const Emulator = () => {
         if (emulatorCore && emulatorCore.mmu && emulatorCore.mmu.cart) {
             try {
                 const gameCode = emulatorCore.mmu.cart.code || 'GENERIC';
-                const savedJson = localStorage.getItem(`gbaSave_${gameCode}`);
+                const fullSavedData = localStorage.getItem(`gbaSaveFull_${gameCode}`);
+                const legacySavedData = localStorage.getItem(`gbaSave_${gameCode}`);
 
-                if (savedJson) {
-                    const serializedState = JSON.parse(savedJson);
-
-                    // Deserialize Base64 back to buffers
+                if (fullSavedData && typeof emulatorCore.loadStateCustom === 'function') {
+                    emulatorCore.loadStateCustom(fullSavedData, () => {
+                        console.log(`Loaded FULL state for game: ${gameCode}`);
+                    });
+                } else if (legacySavedData) {
+                    // Legacy load logic
+                    const serializedState = JSON.parse(legacySavedData);
                     const rawState = {
                         ram: base64ToArrayBuffer(serializedState.ram),
                         iram: base64ToArrayBuffer(serializedState.iram)
                     };
-
                     emulatorCore.loadState(rawState);
-                    console.log(`Loaded state for game: ${gameCode}`);
+                    console.log(`Loaded legacy partial state for game: ${gameCode}`);
                 } else {
-                    throw new Error('No save state found for this game');
+                    console.warn('No save state found for this game');
                 }
             } catch (error) {
                 console.error('Failed to load state:', error);
-                throw error;
             }
         }
     }, [emulatorCore]);
@@ -147,6 +162,8 @@ const Emulator = () => {
                             <EmulatorSettings
                                 volume={volume}
                                 onVolumeChange={handleVolumeChange}
+                                fastForward={fastForward}
+                                onToggleFastForward={handleToggleFastForward}
                                 onSaveState={handleSaveState}
                                 onLoadState={handleLoadState}
                                 onReset={handleReset}

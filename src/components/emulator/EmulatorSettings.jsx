@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const EmulatorSettings = ({ volume, onVolumeChange, onSaveState, onLoadState, onReset, onCloseGame }) => {
+const EmulatorSettings = ({ volume, onVolumeChange, fastForward, onToggleFastForward, onSaveState, onLoadState, onReset, onCloseGame }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
@@ -81,6 +81,24 @@ const EmulatorSettings = ({ volume, onVolumeChange, onSaveState, onLoadState, on
                         <span>50</span>
                         <span>100</span>
                     </div>
+                </div>
+            </div>
+
+            {/* Fast Forward Toggle */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className={`material-symbols-outlined transition-colors ${fastForward ? 'text-orange-400' : 'text-gray-400'}`}>fast_forward</span>
+                        <span className="text-white text-sm font-bold">Fast Forward (x2)</span>
+                    </div>
+                    <button
+                        onClick={() => onToggleFastForward(!fastForward)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${fastForward ? 'bg-orange-500' : 'bg-gray-600'}`}
+                    >
+                        <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${fastForward ? 'translate-x-6' : 'translate-x-1'}`}
+                        />
+                    </button>
                 </div>
             </div>
 
