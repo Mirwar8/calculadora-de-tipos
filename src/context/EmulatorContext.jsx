@@ -36,23 +36,37 @@ export const EmulatorProvider = ({ children }) => {
 
     const [isCoreLoading, setIsCoreLoading] = useState(false);
     const [isCoreReady, setIsCoreReady] = useState(false);
+    const [coreError, setCoreError] = useState(null);
 
     const initEngine = useCallback(async () => {
-        if (emulatorInstanceRef.current || mgbaPromise) return;
+        if (emulatorInstanceRef.current || isCoreLoading) return;
+        if (mgbaPromise) return mgbaPromise;
 
         setIsCoreLoading(true);
+        setCoreError(null);
+        
         mgbaPromise = (async () => {
             try {
                 console.log('--- [Context] Starting mGBA Singleton Engine ---');
-                const core = await mGBA({ 
-                    canvas: canvasElement,
-                    // Use a dummy element to absorb mGBA's internal keyboard listeners
-                    keyboardListeningElement: document.createElement('div'), 
-                    locateFile: (path) => {
-                        if (path.endsWith('.wasm')) return '/mgba.wasm';
-                        return path;
-                    }
-                });
+                
+                // Create a timeout promise
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Engine initialization timed out (15s)')), 15000)
+                );
+
+                // Race the engine init against the timeout
+                const core = await Promise.race([
+                    mGBA({ 
+                        canvas: canvasElement,
+                        // Use a dummy element to absorb mGBA's internal keyboard listeners
+                        keyboardListeningElement: document.createElement('div'), 
+                        locateFile: (path) => {
+                            if (path.endsWith('.wasm')) return '/mgba.wasm';
+                            return path;
+                        }
+                    }),
+                    timeoutPromise
+                ]);
                 
                 await core.FSInit();
                 
@@ -75,10 +89,13 @@ export const EmulatorProvider = ({ children }) => {
                 console.error('[Context] mGBA Singleton Error:', err);
                 mgbaPromise = null;
                 setIsCoreLoading(false);
+                setCoreError(err.message || 'Error desconocido al iniciar el motor');
                 throw err;
             }
         })();
-    }, [canvasElement]);
+        
+        return mgbaPromise;
+    }, [canvasElement, isCoreLoading]);
 
     const loadRom = useCallback((data, name) => {
         setRomData(data);
@@ -179,12 +196,13 @@ export const EmulatorProvider = ({ children }) => {
         setVolume: setVolumeCallback,
         fastForward,
         setFastForward: setFastForwardCallback,
-        safeCore
+        safeCore,
+        coreError
     }), [
         romData, romName, instanceUpdateToggle, canvasElement, initEngine, 
         isCoreLoading, isCoreReady, loadRom, closeGame, isPlaying, 
         isPaused, togglePause, volume, fastForward, setVolumeCallback, 
-        setFastForwardCallback, safeCore
+        setFastForwardCallback, safeCore, coreError
     ]);
 
     return (

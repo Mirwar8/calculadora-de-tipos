@@ -14,7 +14,8 @@ const EmulatorScreen = ({ romData, romName, isPlaying, isPaused, volume, onPlayP
         initEngine,
         isCoreReady,
         isCoreLoading,
-        canvasElement
+        canvasElement,
+        coreError
     } = useEmulator();
     
     const containerRef = useRef(null);
@@ -253,22 +254,43 @@ const EmulatorScreen = ({ romData, romName, isPlaying, isPaused, volume, onPlayP
                             }`}>
 
                             <div className={`bg-black overflow-hidden relative flex justify-center items-center mx-auto ${dimensionsClass}`}>
-                                <div 
-                                    ref={canvasContainerRef}
-                                    className="w-full h-full block flex justify-center items-center"
-                                />
+                            <div 
+                                ref={canvasContainerRef}
+                                className="w-full h-full block flex justify-center items-center"
+                            />
 
-                                {(isCoreLoading || !isCoreReady || isRomLoading) && !loadError && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm z-30">
-                                        <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">{isRomLoading ? 'Cargando Juego...' : 'Iniciando Motor...'}</p>
-                                        {!window.crossOriginIsolated && !isRomLoading && (
-                                            <p className="text-orange-400 text-[10px] mt-2 max-w-[200px] text-center leading-tight">
-                                                Aislamiento COOP/COEP no detectado. Si estás en móvil, usa Chrome o Safari directamente (no desde apps como Instagram o WhatsApp).
+                            {(isCoreLoading || !isCoreReady || isRomLoading) && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm z-30">
+                                    {!coreError && (
+                                        <>
+                                            <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+                                                {isRomLoading ? 'Cargando Juego...' : 'Iniciando Motor...'}
                                             </p>
-                                        )}
-                                    </div>
-                                )}
+                                        </>
+                                    )}
+                                    
+                                    {coreError && (
+                                        <div className="flex flex-col items-center p-6 text-center">
+                                            <span className="material-symbols-outlined text-red-500 text-4xl mb-2">error</span>
+                                            <p className="text-red-400 text-sm font-bold mb-1">Error de Inicialización</p>
+                                            <p className="text-gray-400 text-[10px] mb-4 max-w-[200px] leading-tight">{coreError}</p>
+                                            <button 
+                                                onClick={() => initEngine()}
+                                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs font-bold transition-all active:scale-95 shadow-lg shadow-purple-900/20"
+                                            >
+                                                Reintentar
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {!window.crossOriginIsolated && !isRomLoading && !coreError && (
+                                        <p className="text-orange-400 text-[10px] mt-4 max-w-[240px] text-center leading-tight px-4">
+                                            <span className="font-bold">Aviso:</span> Aislamiento COOP/COEP no detectado. Si estás en móvil, usa Chrome o Safari directamente (no desde apps como Instagram o WhatsApp).
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                                 {isCoreReady && !romData && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-black">
