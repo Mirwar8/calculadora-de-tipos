@@ -9,22 +9,23 @@ import SettingsModal from '../components/emulator/SettingsModal';
 const Emulator = () => {
     const { 
         romData, 
+        romName,
         isPlaying, 
         volume, 
         isPaused, 
         fastForward,
         setFastForward,
-        emulatorInstance: emulatorCore,
+        safeCore,
+        isCoreReady,
         loadRom, 
         closeGame, 
         togglePause,
-        setVolume,
-        setEmulatorInstance
+        setVolume
     } = useEmulator();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-    const handleRomLoad = useCallback((rom) => {
-        loadRom(rom);
+    const handleRomLoad = useCallback((rom, name) => {
+        loadRom(rom, name);
     }, [loadRom]);
 
     const handlePlayPause = useCallback(() => {
@@ -32,99 +33,49 @@ const Emulator = () => {
     }, [togglePause]);
 
     const handleReset = useCallback(() => {
-        if (emulatorCore) {
-            emulatorCore.reset();
+        if (isCoreReady) {
+            safeCore.reset();
         }
-    }, [emulatorCore]);
+    }, [isCoreReady, safeCore]);
 
     const handleVolumeChange = useCallback((newVolume) => {
         setVolume(newVolume);
-        if (emulatorCore) {
-            emulatorCore.setVolume(newVolume);
-        }
-    }, [emulatorCore, setVolume]);
+    }, [setVolume]);
 
     const handleToggleFastForward = useCallback((active) => {
         setFastForward(active);
-        if (emulatorCore && typeof emulatorCore.setFastForward === 'function') {
-            emulatorCore.setFastForward(active);
-        }
-    }, [emulatorCore, setFastForward]);
+    }, [setFastForward]);
 
-    // Serialization Helpers for binary data in LocalStorage
-    const arrayBufferToBase64 = (buffer) => {
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return window.btoa(binary);
-    };
-
-    const base64ToArrayBuffer = (base64) => {
-        const binary_string = window.atob(base64);
-        const len = binary_string.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            bytes[i] = binary_string.charCodeAt(i);
-        }
-        return bytes.buffer;
-    };
-
-    const handleSaveState = useCallback(() => {
-        if (emulatorCore && emulatorCore.mmu && emulatorCore.mmu.cart) {
+    const handleSaveState = useCallback(async (slot = 0) => {
+        if (isCoreReady) {
             try {
-                const gameCode = emulatorCore.mmu.cart.code || 'GENERIC';
-                
-                if (typeof emulatorCore.saveStateCustom === 'function') {
-                    emulatorCore.saveStateCustom((dataUrl) => {
-                        localStorage.setItem(`gbaSaveFull_${gameCode}`, dataUrl);
-                        console.log(`Saved FULL state for game: ${gameCode}`);
-                    });
+                const success = safeCore.saveState(slot);
+                if(success) {
+                    await safeCore.FSSync();
                 } else {
-                    // Legacy fallback
-                    const rawState = emulatorCore.saveState();
-                    const serializedState = {
-                        ram: arrayBufferToBase64(rawState.ram),
-                        iram: arrayBufferToBase64(rawState.iram)
-                    };
-                    localStorage.setItem(`gbaSave_${gameCode}`, JSON.stringify(serializedState));
+                    throw new Error("Core rejected save state");
                 }
             } catch (error) {
                 console.error('Failed to save state:', error);
+                throw error;
             }
         }
-    }, [emulatorCore]);
+    }, [isCoreReady, safeCore]);
 
-    const handleLoadState = useCallback(() => {
-        if (emulatorCore && emulatorCore.mmu && emulatorCore.mmu.cart) {
+    const handleLoadState = useCallback((slot = 0) => {
+        if (isCoreReady) {
             try {
-                const gameCode = emulatorCore.mmu.cart.code || 'GENERIC';
-                const fullSavedData = localStorage.getItem(`gbaSaveFull_${gameCode}`);
-                const legacySavedData = localStorage.getItem(`gbaSave_${gameCode}`);
-
-                if (fullSavedData && typeof emulatorCore.loadStateCustom === 'function') {
-                    emulatorCore.loadStateCustom(fullSavedData, () => {
-                        console.log(`Loaded FULL state for game: ${gameCode}`);
-                    });
-                } else if (legacySavedData) {
-                    // Legacy load logic
-                    const serializedState = JSON.parse(legacySavedData);
-                    const rawState = {
-                        ram: base64ToArrayBuffer(serializedState.ram),
-                        iram: base64ToArrayBuffer(serializedState.iram)
-                    };
-                    emulatorCore.loadState(rawState);
-                    console.log(`Loaded legacy partial state for game: ${gameCode}`);
-                } else {
-                    console.warn('No save state found for this game');
+                const success = safeCore.loadGame(safeCore.filePaths().gamePath + '/' + romName); // Ensure game is loaded
+                const loadSuccess = safeCore.loadState(slot);
+                if(!loadSuccess) {
+                    throw new Error("No save state found");
                 }
             } catch (error) {
                 console.error('Failed to load state:', error);
+                throw error;
             }
         }
-    }, [emulatorCore]);
+    }, [isCoreReady, safeCore, romName]);
 
     const handleCloseGame = useCallback(() => {
         closeGame();
@@ -144,10 +95,10 @@ const Emulator = () => {
                         <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6">
                             <EmulatorScreen
                                 romData={romData}
+                                romName={romName}
                                 isPlaying={isPlaying}
                                 isPaused={isPaused}
                                 volume={volume}
-                                onEmulatorReady={setEmulatorInstance}
                                 onPlayPause={handlePlayPause}
                                 onOpenSettings={() => setIsSettingsOpen(true)}
                             />

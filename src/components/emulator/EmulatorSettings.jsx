@@ -4,14 +4,15 @@ const EmulatorSettings = ({ volume, onVolumeChange, fastForward, onToggleFastFor
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
+    const [selectedSlot, setSelectedSlot] = useState(0);
 
     const handleSaveState = async () => {
         setIsSaving(true);
-        setSaveMessage('Saving...');
+        setSaveMessage('Saving Slot ' + (selectedSlot + 1) + '...');
 
         try {
-            await onSaveState();
-            setSaveMessage('State saved!');
+            await onSaveState(selectedSlot);
+            setSaveMessage('State saved successfully!');
         } catch (error) {
             setSaveMessage('Save failed!');
         } finally {
@@ -22,13 +23,13 @@ const EmulatorSettings = ({ volume, onVolumeChange, fastForward, onToggleFastFor
 
     const handleLoadState = async () => {
         setIsLoading(true);
-        setSaveMessage('Loading...');
+        setSaveMessage('Loading Slot ' + (selectedSlot + 1) + '...');
 
         try {
-            await onLoadState();
-            setSaveMessage('State loaded!');
+            await onLoadState(selectedSlot);
+            setSaveMessage('State loaded successfully!');
         } catch (error) {
-            setSaveMessage('Load failed!');
+            setSaveMessage('Load failed! No data found.');
         } finally {
             setIsLoading(false);
             setTimeout(() => setSaveMessage(''), 2000);
@@ -102,45 +103,64 @@ const EmulatorSettings = ({ volume, onVolumeChange, fastForward, onToggleFastFor
                 </div>
             </div>
 
-            {/* Save States */}
-            <div className="space-y-3">
-                <h4 className="text-white text-sm font-bold flex items-center gap-2">
-                    <span className="material-symbols-outlined text-green-400">save</span>
-                    Save States
-                </h4>
+            {/* Save States Section */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h4 className="text-white text-sm font-bold flex items-center gap-2">
+                        <span className="material-symbols-outlined text-green-400">save</span>
+                        Save States
+                    </h4>
+                    <div className="flex bg-gray-700/50 rounded-lg p-1 border border-white/5">
+                        {[0, 1, 2].map(slot => (
+                            <button
+                                key={slot}
+                                onClick={() => setSelectedSlot(slot)}
+                                className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+                                    selectedSlot === slot 
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' 
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
+                            >
+                                SLOT {slot + 1}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-2">
                     <button
                         onClick={handleSaveState}
                         disabled={isSaving}
-                        className="flex items-center justify-center gap-2 bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-600/30 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-2 bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-600/30 py-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-50"
                     >
                         {isSaving ? (
                             <div className="animate-spin w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full"></div>
                         ) : (
                             <span className="material-symbols-outlined text-sm">save</span>
                         )}
-                        <span className="text-xs font-bold">SAVE</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">Save Slot {selectedSlot + 1}</span>
                     </button>
 
                     <button
                         onClick={handleLoadState}
                         disabled={isLoading}
-                        className="flex items-center justify-center gap-2 bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 border border-orange-600/30 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-2 bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 border border-orange-600/30 py-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-50"
                     >
                         {isLoading ? (
                             <div className="animate-spin w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full"></div>
                         ) : (
                             <span className="material-symbols-outlined text-sm">folder_open</span>
                         )}
-                        <span className="text-xs font-bold">LOAD</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">Load Slot {selectedSlot + 1}</span>
                     </button>
                 </div>
 
                 {saveMessage && (
-                    <div className={`text-center text-xs font-bold ${saveMessage.includes('saved') ? 'text-green-400' :
-                            saveMessage.includes('loaded') ? 'text-orange-400' : 'text-red-400'
-                        }`}>
+                    <div className={`mt-2 p-2 rounded-lg text-center text-[10px] font-bold uppercase tracking-widest border animate-in fade-in slide-in-from-top-1 ${
+                        saveMessage.includes('saved') ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                        saveMessage.includes('loaded') ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 
+                        'bg-red-500/10 text-red-400 border-red-500/20'
+                    }`}>
                         {saveMessage}
                     </div>
                 )}

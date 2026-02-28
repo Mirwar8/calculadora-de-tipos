@@ -10,8 +10,10 @@ const RomLoader = ({ onRomLoad }) => {
         if (!file) return;
 
         // Validate file extension
-        if (!file.name.toLowerCase().endsWith('.gba')) {
-            setError('Please select a valid GBA ROM file (.gba)');
+        const validExtensions = ['.gba', '.gbc', '.gb'];
+        const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!validExtensions.includes(fileExt)) {
+            setError('Please select a valid ROM file (.gba, .gbc, .gb)');
             return;
         }
 
@@ -26,7 +28,7 @@ const RomLoader = ({ onRomLoad }) => {
 
         try {
             const romData = await readFileAsArrayBuffer(file);
-            onRomLoad(romData);
+            onRomLoad(romData, file.name);
         } catch (err) {
             setError('Failed to load ROM file. Please try again.');
             console.error('ROM loading error:', err);
@@ -79,7 +81,7 @@ const RomLoader = ({ onRomLoad }) => {
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".gba"
+                        accept=".gba,.gbc,.gb"
                         onChange={handleFileSelect}
                         className="hidden"
                     />
@@ -93,7 +95,7 @@ const RomLoader = ({ onRomLoad }) => {
                             <div className="flex flex-col items-center">
                                 <span className="material-symbols-outlined text-gray-400 text-5xl mb-4">upload_file</span>
                                 <p className="text-white font-medium mb-2">Drop ROM file here or click to browse</p>
-                                <p className="text-gray-500 text-sm">Supports .gba files up to 32MB</p>
+                                <p className="text-gray-500 text-sm">Supports .gba, .gbc, .gb up to 32MB</p>
                             </div>
                         )}
                     </div>

@@ -6,6 +6,12 @@ const MobileControls = ({ onControlDown, onControlUp }) => {
         // Prevent default to stop scrolling/selection
         if (e.cancelable) e.preventDefault();
         e.stopPropagation();
+        
+        // Haptic feedback
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(15);
+        }
+        
         onControlDown(key);
     };
 

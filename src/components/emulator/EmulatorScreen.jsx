@@ -2,499 +2,200 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useEmulator } from '../../context/EmulatorContext';
 import MobileControls from './MobileControls';
 import EmulatorStatusBar from './EmulatorStatusBar';
+import mGBA from '@thenick775/mgba-wasm';
 
-const GBA_SCRIPTS = [
-    '/emulator/js/util.js',
-    '/emulator/js/core.js',
-    '/emulator/js/arm.js',
-    '/emulator/js/thumb.js',
-    '/emulator/js/mmu.js',
-    '/emulator/js/io.js',
-    '/emulator/js/audio.js',
-    '/emulator/js/video.js',
-    '/emulator/js/video/proxy.js',
-    '/emulator/js/video/software.js',
-    '/emulator/js/irq.js',
-    '/emulator/js/keypad.js',
-    '/emulator/js/sio.js',
-    '/emulator/js/savedata.js',
-    '/emulator/js/gpio.js',
-    '/emulator/js/gba.js'
-];
+// Global lock to prevent double-initialization in Strict Mode
+let globalMgbaPromise = null;
+let globalMgbaInstance = null;
 
-const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady, onPlayPause, onOpenSettings }) => {
-    const { emulatorInstance: contextEmulatorInstance, setEmulatorInstance: setContextEmulatorInstance } = useEmulator();
-    const canvasRef = useRef(null);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [emulatorInstance, setEmulatorInstance] = useState(null);
-    const [scriptsLoaded, setScriptsLoaded] = useState(false);
-    const [loadError, setLoadError] = useState(null);
-
-    // Helper to load multiple scripts sequentially
-    useEffect(() => {
-        // PERFORMANCE FIX: Use requestAnimationFrame for smoother emulation
-        window.queueFrame = (f) => {
-            window.requestAnimationFrame(f);
-        };
-
-        let mounted = true;
-        const loadScripts = async () => {
-            try {
-                for (const src of GBA_SCRIPTS) {
-                    if (!mounted) return;
-                    await new Promise((resolve, reject) => {
-                        // Check if script already exists
-                        if (document.querySelector(`script[src="${src}"]`)) {
-                            resolve();
-                            return;
-                        }
-                        const script = document.createElement('script');
-                        script.src = src;
-                        script.async = false; // Important: load in order
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
-                        document.head.appendChild(script);
-                    });
-                }
-                if (mounted) setScriptsLoaded(true);
-            } catch (err) {
-                console.error('Error loading GBA scripts:', err);
-                if (mounted) setLoadError(err.message);
-            }
-        };
-
-        loadScripts();
-        return () => { mounted = false; };
-    }, []);
-
-    // Initialize Emulator when scripts and canvas are ready
-    useEffect(() => {
-        if (scriptsLoaded && canvasRef.current && window.GameBoyAdvance) {
-            // Check if emulator instance already exists in context
-            if (contextEmulatorInstance) {
-                console.log('Re-attaching existing emulator instance...');
-                try {
-                    // Create new offscreen canvas for re-attachment
-                    const offscreenCanvas = document.createElement('canvas');
-                    offscreenCanvas.width = 240;
-                    offscreenCanvas.height = 160;
-                    
-                    // Re-attach canvas to existing instance
-                    contextEmulatorInstance.setCanvas(offscreenCanvas);
-                    
-                    // Hook into the video draw callback to paint our visible canvas
-                    contextEmulatorInstance.video.drawCallback = () => {
-                        if (canvasRef.current) {
-                            const ctx = canvasRef.current.getContext('2d', { alpha: false });
-                            // Draw 1:1. CSS handles the visual scaling ("zooming").
-                            ctx.drawImage(offscreenCanvas, 0, 0);
-                        }
-                    };
-
-                    setEmulatorInstance(contextEmulatorInstance);
-                    onEmulatorReady(contextEmulatorInstance);
-                } catch (err) {
-                    console.error('Error re-attaching emulator instance:', err);
-                    setLoadError('Failed to re-attach emulator: ' + err.message);
-                }
-            } else if (!emulatorInstance) {
-                // Create new emulator instance
-                try {
-                    console.log('Initializing GBA Emulator...');
-                    const gba = new window.GameBoyAdvance();
-
-                    // Configure GBA
-                    gba.setCanvas(canvasRef.current);
-                    gba.logLevel = gba.LOG_ERROR;
-
-                    // Add logger to catch crashes
-                    gba.setLogger((level, error) => {
-                        console.error('GBA Emulator Error:', error);
-                        gba.pause();
-
-                        let errorMessage = 'Unknown Error';
-                        if (typeof error === 'string') {
-                            errorMessage = error;
-                        } else if (error && error.message) {
-                            errorMessage = error.message;
-                        } else if (error) {
-                            try {
-                                errorMessage = JSON.stringify(error);
-                            } catch (e) {
-                                errorMessage = '' + error;
-                            }
-                        }
-                        setLoadError(`Emulator Crashed: ${errorMessage}`);
-                    });
-
-                    // Monkey-patch ERROR and logStackTrace
-                    gba.ERROR = function (error) {
-                        this.log(this.LOG_ERROR, error);
-                    };
-
-                    gba.logStackTrace = function (stack) {
-                        console.error('Stack Trace:', stack);
-                    };
-
-                    // Savestates using gba.js native freeze() + Serializer
-                    gba.saveStateCustom = function (callback) {
-                        try {
-                            const frost = this.freeze();
-                            const blob = window.Serializer.serialize(frost);
-                            const reader = new FileReader();
-                            reader.readAsDataURL(blob);
-                            reader.onloadend = () => {
-                                if (callback) callback(reader.result);
-                            };
-                        } catch (e) {
-                            console.error('Error in saveStateCustom:', e);
-                        }
-                    };
-
-                    gba.loadStateCustom = function (dataUrl, callback) {
-                        try {
-                            fetch(dataUrl)
-                                .then(res => res.blob())
-                                .then(blob => {
-                                    window.Serializer.deserialize(blob, (frost) => {
-                                        this.defrost(frost);
-                                        
-                                        // Forzar un avance para que la pantalla se actualice instantaneamente tras cargar
-                                        try {
-                                            this.advanceFrame();
-                                        } catch (e) {
-                                            console.warn("Error force-advancing frame after load:", e);
-                                        }
-
-                                        // Si el emulador estaba corriendo, reiniciarlo para evitar congelamiento
-                                        if (this.paused === false) {
-                                            this.runStable();
-                                        }
-                                        if (callback) callback();
-                                    });
-                                })
-                                .catch(e => console.error('Error fetching state blob:', e));
-                        } catch (e) {
-                            console.error('Error in loadStateCustom:', e);
-                        }
-                    };
-
-                    // Fast Forward Implementation
-                    gba.fastForwardActive = false;
-                    
-                    gba.runStable = function() {
-                        if (this.interval) return;
-                        let self = this;
-                        this.paused = false;
-
-                        const runFunc = function() {
-                            try {
-                                if (self.paused) return;
-                                
-                                if (self.fastForwardActive) {
-                                    // Procesar multiples frames lógicos por cada refresco visual (Velocidad x3)
-                                    // Y silenciar el audio extra para evitar crujidos/lag
-                                    self.audio.pause(true);
-                                    for(let i = 0; i < 3; i++) {
-                                        self.advanceFrame();
-                                    }
-                                } else {
-                                    if(self.audio.context.state === 'suspended' && !self.paused) {
-                                        self.audio.pause(false);
-                                    }
-                                    // Velocidad normal (1 frame)
-                                    self.advanceFrame();
-                                }
-                                
-                                window.queueFrame(runFunc);
-                            } catch(exception) {
-                                self.ERROR(exception);
-                                if (exception.stack) self.logStackTrace(exception.stack.split('\\n'));
-                                throw exception;
-                            }
-                        };
-                        window.queueFrame(runFunc);
-                    };
-
-                    gba.setFastForward = function(active) {
-                        this.fastForwardActive = active;
-                        if (active) {
-                            this.audio.pause(true); // Must pause audio to prevent crackling/desync
-                        } else if (!this.paused) {
-                            this.audio.pause(false);
-                        }
-                    };
-
-                    // Monkey-patch setCanvas to strictly use our offscreen canvas logic
-                    // We don't want GBA.js touching the DOM or scaling logic at all.
-                    gba.setCanvas = function (canvas) {
-                        this.context = canvas.getContext('2d');
-                        this.video.setBacking(this.context);
-                    };
-
-                    // Compulsory BIOS loading handling
-                    const loadBiosAndInit = async () => {
-                        try {
-                            const res = await fetch('/emulator/resources/bios.bin');
-                            if (!res.ok) throw new Error('BIOS not found');
-                            const bios = await res.arrayBuffer();
-                            gba.setBios(bios);
-                            console.log('GBA BIOS loaded successfully');
-                        } catch (err) {
-                            console.warn('GBA BIOS warning:', err);
-                        }
-
-                        // Create an isolated offscreen buffer for the GBA to draw into.
-                        // This guarantees strict 240x160 rendering regardless of standard canvas nonsense.
-                        const offscreenCanvas = document.createElement('canvas');
-                        offscreenCanvas.width = 240;
-                        offscreenCanvas.height = 160;
-                        gba.setCanvas(offscreenCanvas);
-
-                        // Hook into the video draw callback to paint our visible canvas
-                        gba.video.drawCallback = () => {
-                            if (canvasRef.current) {
-                                const ctx = canvasRef.current.getContext('2d', { alpha: false });
-                                // Draw 1:1. CSS handles the visual scaling ("zooming").
-                                ctx.drawImage(offscreenCanvas, 0, 0);
-                            }
-                        };
-
-                        setEmulatorInstance(gba);
-                        setContextEmulatorInstance(gba);
-                        onEmulatorReady(gba);
-                    };
-
-                    loadBiosAndInit();
-
-                    return () => {
-                        if (gba && typeof gba.pause === 'function') {
-                            gba.pause();
-                        }
-                    };
-                } catch (err) {
-                    console.error('General error in Emulator initialization:', err);
-                    setLoadError('Initialization failed: ' + err.message);
-                }
-            }
-        }
-    }, [scriptsLoaded, onEmulatorReady, emulatorInstance, contextEmulatorInstance, setContextEmulatorInstance]);
-
-    // Handle ROM loading
-    useEffect(() => {
-        if (emulatorInstance && romData) {
-            console.log('Loading ROM...', romData);
-
-            try {
-                // If romData is an ArrayBuffer (from RomLoader), load it directly
-                if (romData instanceof ArrayBuffer) {
-                    console.log('Loading from ArrayBuffer directly');
-                    const success = emulatorInstance.setRom(romData);
-                    if (success) {
-                        console.log('setRom returned success');
-                        setTimeout(() => {
-                            try {
-                                console.log('Starting execution...');
-                                emulatorInstance.runStable();
-                            } catch (e) {
-                                console.error('Error starting emulator:', e);
-                                setLoadError('Failed to start emulation: ' + e.message);
-                            }
-                        }, 100);
-                    } else {
-                        console.error('setRom failed');
-                        setLoadError('Failed to load ROM data (invalid format?)');
-                    }
-                }
-                // Fallback for Blob/File (if passed differently in future)
-                else {
-                    console.log('Loading from File/Blob');
-                    emulatorInstance.loadRomFromFile(romData, (success) => {
-                        if (success) {
-                            console.log('ROM loaded successfully');
-                            setTimeout(() => {
-                                try {
-                                    emulatorInstance.runStable();
-                                } catch (e) {
-                                    console.error('Error starting emulator:', e);
-                                    setLoadError('Failed to start emulation: ' + e.message);
-                                }
-                            }, 100);
-                        } else {
-                            console.error('Failed to load ROM');
-                            setLoadError('Failed to load ROM file.');
-                        }
-                    });
-                }
-            } catch (err) {
-                console.error('Error loading ROM:', err);
-                setLoadError('ROM Loading Error: ' + err.message);
-            }
-        }
-    }, [emulatorInstance, romData]);
-
-    // Sync Play/Pause state
-    useEffect(() => {
-        if (emulatorInstance) {
-            if (isPlaying && !isPaused) {
-                if (emulatorInstance.paused) {
-                    emulatorInstance.runStable();
-                }
-            } else {
-                if (!emulatorInstance.paused) {
-                    emulatorInstance.pause();
-                }
-            }
-        }
-    }, [isPlaying, isPaused, emulatorInstance]);
-
-    // Sync Volume state
-    useEffect(() => {
-        if (emulatorInstance && emulatorInstance.audio) {
-            // masterVolume is 0.0 to 1.0
-            emulatorInstance.audio.masterVolume = volume;
-        }
-    }, [volume, emulatorInstance]);
-
-    // Focus management using Ref for immediate access in event listeners
-    const [isFocused, setIsFocused] = useState(false);
-    const isFocusedRef = useRef(false);
+const EmulatorScreen = ({ romData, romName, isPlaying, isPaused, volume, onPlayPause, onOpenSettings }) => {
+    const { 
+        safeCore, 
+        initEngine,
+        isCoreReady,
+        isCoreLoading,
+        canvasElement
+    } = useEmulator();
+    
     const containerRef = useRef(null);
+    const canvasContainerRef = useRef(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [loadError, setLoadError] = useState(null);
+    const [isFocused, setIsFocused] = useState(false); // Start unfocused to avoid key hijacking
+    const [isRomLoading, setIsRomLoading] = useState(false);
 
-    const setFocus = useCallback((focused) => {
-        setIsFocused(focused);
-        isFocusedRef.current = focused;
-    }, []);
+    // Initial Engine Start
+    useEffect(() => {
+        initEngine().catch(err => {
+            console.error('Core init failed:', err);
+            setLoadError('Failed to load emulator core: ' + err.message);
+        });
+    }, [initEngine]);
 
-    const handleFocus = useCallback(() => setFocus(true), [setFocus]);
-    const handleBlur = useCallback(() => setFocus(false), [setFocus]);
+    // Mount persistent canvas
+    useEffect(() => {
+        if (canvasContainerRef.current && canvasElement) {
+            // Clear container before appending
+            canvasContainerRef.current.innerHTML = '';
+            canvasContainerRef.current.appendChild(canvasElement);
+        }
+    }, [canvasElement]);
 
-    // Explicitly focus the DOM element on click
-    const handleContainerClick = useCallback(() => {
-        if (containerRef.current) {
+    // Update canvas size
+    useEffect(() => {
+        if (canvasElement && romName) {
+            const isGBC = romName.toLowerCase().endsWith('.gbc') || romName.toLowerCase().endsWith('.gb');
+            canvasElement.width = isGBC ? 160 : 240;
+            canvasElement.height = isGBC ? 144 : 160;
+        }
+    }, [canvasElement, romName]);
+
+    // ROM Load sync
+    useEffect(() => {
+        if (isCoreReady && romData && romName && !isRomLoading) {
+            let isAborted = false;
+            
+            const performLoad = async () => {
+                setIsRomLoading(true);
+                setLoadError(null);
+                
+                try {
+                    console.log(`[Screen] Loading ROM: ${romName}`);
+                    const dataUint8 = new Uint8Array(romData);
+                    const paths = safeCore.filePaths();
+                    
+                    if (!paths || !paths.gamePath) {
+                        throw new Error('Emulator filesystem not ready (paths missing)');
+                    }
+
+                    const path = paths.gamePath + '/' + romName;
+                    
+                    safeCore.writeFile(path, dataUint8);
+                    const success = safeCore.loadGame(path);
+                    
+                    if (isAborted) return;
+                    if (!success) throw new Error('mGBA failed to load game data');
+                    
+                    console.log('[Screen] Game loaded success. Starting audio...');
+                    
+                    setTimeout(() => {
+                        if (isAborted) return;
+                        try {
+                            safeCore.resume(); 
+                            safeCore.resumeAudio();
+                            safeCore.setVolume(parseFloat(volume));
+                            console.log(`[Screen] Applied initial volume: ${volume}`);
+                        } catch (e) {
+                            console.warn('[Screen] Audio init failed:', e);
+                        }
+                    }, 150);
+                    
+                    console.log('[Screen] Game started.');
+                } catch (err) {
+                    if (!isAborted) {
+                        console.error('[Screen] ROM load error:', err);
+                        setLoadError('Error loading ROM: ' + err.message);
+                    }
+                } finally {
+                    if (!isAborted) setIsRomLoading(false);
+                }
+            };
+
+            performLoad();
+            return () => { isAborted = true; };
+        }
+    }, [isCoreReady, romData, romName, safeCore]); // volume is not a dependency to avoid reloads
+
+    // Pausing sync
+    useEffect(() => {
+        if (isCoreReady) {
+            if (isPaused || !isFocused) {
+                safeCore.pause();
+            } else if (isPlaying) {
+                safeCore.resume();
+            }
+        }
+    }, [isPaused, isPlaying, isCoreReady, isFocused, safeCore]);
+
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = () => setIsFocused(false);
+    
+    const handleContainerClick = () => {
+        if (!isFocused && containerRef.current) {
             containerRef.current.focus();
-            setFocus(true);
         }
-    }, [setFocus]);
+    };
 
-    // Canvas scaling helper
-    const updateCanvasScaling = useCallback((canvas) => {
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d', { alpha: false });
-        if (ctx) {
-            ctx.imageSmoothingEnabled = false;
-            ctx.webkitImageSmoothingEnabled = false;
-            ctx.mozImageSmoothingEnabled = false;
-            ctx.msImageSmoothingEnabled = false;
-        }
-    }, []);
-
-    const handleFullscreen = useCallback(() => {
-        if (!isFullscreen) {
-            containerRef.current?.requestFullscreen?.();
+    const handleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            containerRef.current.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
         } else {
-            document.exitFullscreen?.();
+            document.exitFullscreen();
         }
-        setIsFullscreen(!isFullscreen);
-    }, [isFullscreen]);
+    };
 
     useEffect(() => {
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
-            // Re-apply scaling on fullscreen change
-            if (canvasRef.current) {
-                updateCanvasScaling(canvasRef.current);
-            }
         };
-
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => {
-            document.removeEventListener('fullscreenchange', handleFullscreenChange);
-        };
-    }, [updateCanvasScaling]);
-
-    // Lock body scroll when emulator is mounted to prevent browser scrolling
-    useEffect(() => {
-        // Save original value
-        const originalOverflow = document.body.style.overflow;
-        // Lock scroll
-        document.body.style.overflow = 'hidden';
-
-        return () => {
-            // Restore original value
-            document.body.style.overflow = originalOverflow;
-        };
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
-    // Aggressive Global Input Handling
-    useEffect(() => {
-        const handleGlobalKeyDown = (event) => {
-            if (!emulatorInstance || !emulatorInstance.keypad || !isFocusedRef.current) return;
+    const isGBC = romName && (romName.toLowerCase().endsWith('.gbc') || romName.toLowerCase().endsWith('.gb'));
+    const aspectClass = isGBC ? 'aspect-[10/9]' : 'aspect-[3/2]';
+    const dimensionsClass = isFullscreen ? `w-auto h-full ${aspectClass}` : (isGBC ? `w-[320px] h-[288px] max-w-[80vw] ${aspectClass}` : `w-[480px] h-[320px] max-w-[80vw] ${aspectClass}`);
 
-            const keyMap = {
-                'ArrowUp': emulatorInstance.keypad.UP,
-                'ArrowDown': emulatorInstance.keypad.DOWN,
-                'ArrowLeft': emulatorInstance.keypad.LEFT,
-                'ArrowRight': emulatorInstance.keypad.RIGHT,
-                'z': emulatorInstance.keypad.A,
-                'x': emulatorInstance.keypad.B,
-                'a': emulatorInstance.keypad.L,
-                's': emulatorInstance.keypad.R,
-                'Enter': emulatorInstance.keypad.START,
-                'Shift': emulatorInstance.keypad.SELECT
-            };
-
-            const gbaKey = keyMap[event.key.toLowerCase()] || keyMap[event.key];
-
-            if (gbaKey !== undefined) {
-                emulatorInstance.keypad.keydown(gbaKey);
-                // CRITICAL: Prevent default browser scrolling/navigation
-                event.preventDefault();
-                event.stopPropagation();
-            }
+    const getMobileControlsMap = (key) => {
+        const mgbaKeyMap = {
+            'RIGHT': 'Right', 'LEFT': 'Left', 'UP': 'Up', 'DOWN': 'Down',
+            'A': 'A', 'B': 'B', 'SELECT': 'Select', 'START': 'Start',
+            'L': 'L', 'R': 'R'
         };
+        return mgbaKeyMap[key];
+    };
 
-        const handleGlobalKeyUp = (event) => {
-            if (!emulatorInstance || !emulatorInstance.keypad || !isFocusedRef.current) return;
+    const keyMap = {
+        'ArrowUp': 'Up',
+        'ArrowDown': 'Down',
+        'ArrowLeft': 'Left',
+        'ArrowRight': 'Right',
+        'z': 'A',
+        'x': 'B',
+        'Z': 'A',
+        'X': 'B',
+        'a': 'L',
+        's': 'R',
+        'A': 'L',
+        'S': 'R',
+        'Enter': 'Start',
+        'Shift': 'Select'
+    };
 
-            const keyMap = {
-                'ArrowUp': emulatorInstance.keypad.UP,
-                'ArrowDown': emulatorInstance.keypad.DOWN,
-                'ArrowLeft': emulatorInstance.keypad.LEFT,
-                'ArrowRight': emulatorInstance.keypad.RIGHT,
-                'z': emulatorInstance.keypad.A,
-                'x': emulatorInstance.keypad.B,
-                'a': emulatorInstance.keypad.L,
-                's': emulatorInstance.keypad.R,
-                'Enter': emulatorInstance.keypad.START,
-                'Shift': emulatorInstance.keypad.SELECT
-            };
-
-            const gbaKey = keyMap[event.key.toLowerCase()] || keyMap[event.key];
-
-            if (gbaKey !== undefined) {
-                emulatorInstance.keypad.keyup(gbaKey);
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        };
-
-        // Attach to window with capture to ensure we get it first
-        window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
-        window.addEventListener('keyup', handleGlobalKeyUp, { capture: true });
-
-        return () => {
-            window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
-            window.removeEventListener('keyup', handleGlobalKeyUp, { capture: true });
-        };
-    }, [emulatorInstance]); // Re-attach if emulator instance changes
-
-    // Ensure scaling is applied when emulator starts
-    useEffect(() => {
-        if (emulatorInstance && canvasRef.current) {
-            updateCanvasScaling(canvasRef.current);
+    const handleKeyDown = (e) => {
+        if (!isCoreReady) return;
+        
+        // If the user is typing in an input, textarea or select, don't intercept
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+            return;
         }
-    }, [emulatorInstance, updateCanvasScaling]);
+
+        const btn = keyMap[e.key];
+        if (btn) {
+            if (e.cancelable) e.preventDefault();
+            safeCore.buttonPress(btn);
+        }
+    };
+
+    const handleKeyUp = (e) => {
+        if (!isCoreReady) return;
+        const btn = keyMap[e.key];
+        if (btn) {
+            safeCore.buttonUnpress(btn);
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -504,8 +205,6 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                 </div>
             )}
 
-            {/* Game Screen Container */}
-            {/* Game Screen Container - GBA Shell Style */}
             <div
                 ref={containerRef}
                 className="relative group outline-none select-none flex flex-col items-center"
@@ -513,14 +212,14 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 onClick={handleContainerClick}
+                onKeyDown={handleKeyDown}
+                onKeyUp={handleKeyUp}
             >
-                {/* GBA Shell Body */}
                 <div className={`relative transition-all duration-500 ease-in-out ${isFullscreen
                     ? 'w-screen h-screen bg-black flex items-center justify-center p-0'
                     : 'bg-[#432371] p-6 pb-12 rounded-[2.5rem] shadow-2xl border-b-8 border-r-8 border-[#2d1b4e] flex flex-col items-center gap-2'
                     }`}>
 
-                    {/* Top Decor Lines (only visible in shell mode) */}
                     {!isFullscreen && (
                         <div className="absolute top-4 w-full px-12 flex justify-between opacity-20 pointer-events-none">
                             <div className="h-1 w-24 bg-white rounded-full"></div>
@@ -528,43 +227,32 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                         </div>
                     )}
 
-                    {/* Screen Bezel (Gray/Black border around screen) */}
                     <div className={`relative bg-[#222] rounded-tl-xl rounded-tr-xl rounded-bl-[2rem] rounded-br-[2rem] shadow-inner overflow-hidden flex flex-col items-center ${isFullscreen ? 'w-full h-full' : 'p-8 pb-10'
                         }`}>
 
-                        {/* Screen Lens (The glass part) */}
                         <div className={`relative bg-black transition-all ${isFullscreen ? 'w-full h-full flex items-center justify-center' : 'rounded-md shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] border-[12px] border-[#333]'
                             }`}>
 
-                            {/* Actual Screen Canvas */}
-                            <div className={`bg-black overflow-hidden relative ${isFullscreen ? 'w-auto h-full aspect-[3/2]' : 'w-[480px] h-[320px] max-w-[80vw] aspect-[3/2]'
-                                }`}>
-                                <canvas
-                                    ref={canvasRef}
-                                    width={240}
-                                    height={160}
-                                    className="w-full h-full block"
-                                    style={{
-                                        imageRendering: 'pixelated',
-                                        objectFit: 'contain'
-                                    }}
+                            <div className={`bg-black overflow-hidden relative flex justify-center items-center mx-auto ${dimensionsClass}`}>
+                                <div 
+                                    ref={canvasContainerRef}
+                                    className="w-full h-full block flex justify-center items-center"
                                 />
 
-                                {!scriptsLoaded && !loadError && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
+                                {(isCoreLoading || !isCoreReady || isRomLoading) && !loadError && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm z-30">
                                         <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                        <p className="text-gray-400 text-sm">Loading Emulator Core...</p>
+                                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">{isRomLoading ? 'Loading Game...' : 'Initialazing Engine...'}</p>
                                     </div>
                                 )}
 
-                                {scriptsLoaded && !romData && (
+                                {isCoreReady && !romData && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-black">
-                                        <div className="text-gray-500 mb-4 font-pixel text-4xl animate-bounce">GAME BOY</div>
+                                        <div className="text-gray-500 mb-4 font-pixel text-4xl animate-bounce">mGBA</div>
                                         <p className="text-gray-400 text-xs tracking-widest uppercase">Select ROM</p>
                                     </div>
                                 )}
 
-                                {/* Overlay to indicate Focus is needed */}
                                 {!isFocused && romData && !isFullscreen && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] transition-opacity cursor-pointer">
                                         <div className="bg-black/80 text-white px-3 py-1 rounded text-xs font-mono animate-pulse border border-white/20">
@@ -575,19 +263,16 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                             </div>
                         </div>
 
-                        {/* Branding Text on Lens */}
                         {!isFullscreen && (
                             <div className="mt-1 flex items-center gap-1 opacity-60">
-                                <span className="font-bold italic text-gray-400 text-sm">GAME BOY</span>
+                                <span className="font-bold italic text-gray-400 text-sm">NOSTALGIA</span>
                                 <span className="font-light italic text-gray-500 text-xs">ADVANCE</span>
                             </div>
                         )}
 
-                        {/* Power LED */}
                         {!isFullscreen && (
                             <div className="absolute top-1/2 -translate-y-1/2 left-4 flex flex-col gap-1">
-                                <span className="text-[8px] text-gray-500 font-bold uppercase -ml-1">Battery</span>
-                                <div className={`w-2 h-2 rounded-full shadow-lg ${emulatorInstance ? 'bg-green-500 shadow-green-500/50' : 'bg-red-900'}`}></div>
+                                <div className={`w-2 h-2 rounded-full shadow-lg ${isCoreReady ? 'bg-green-500 shadow-green-500/50' : 'bg-red-900'}`}></div>
                             </div>
                         )}
                         {!isFullscreen && (
@@ -596,12 +281,18 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                                 <div className="w-1 h-8 bg-gray-700/50 rounded-full ml-1 -mt-4"></div>
                             </div>
                         )}
-
+ 
                         {/* Mobile Controls Overlay */}
-                        {emulatorInstance && (
+                        {isCoreReady && (
                             <MobileControls
-                                onControlDown={(key) => emulatorInstance.keypad.keydown(emulatorInstance.keypad[key])}
-                                onControlUp={(key) => emulatorInstance.keypad.keyup(emulatorInstance.keypad[key])}
+                                onControlDown={(key) => {
+                                    const mapped = getMobileControlsMap(key);
+                                    if(mapped) safeCore.buttonPress(mapped);
+                                }}
+                                onControlUp={(key) => {
+                                    const mapped = getMobileControlsMap(key);
+                                    if(mapped) safeCore.buttonUnpress(mapped);
+                                }}
                             />
                         )}
                     </div>
@@ -617,8 +308,6 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                 </button>
             </div>
 
-            {/* Play/Pause Button (Desktop Centered) */}
-            {/* Play/Pause Button & Status Bar */}
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-6">
                 <div className="flex items-center gap-3">
                     <button
@@ -648,13 +337,13 @@ const EmulatorScreen = ({ romData, isPlaying, isPaused, volume, onEmulatorReady,
                 </div>
 
                 <EmulatorStatusBar
-                    emulatorCore={emulatorInstance}
+                    isCoreReady={isCoreReady}
                     isPlaying={isPlaying}
                     isPaused={isPaused}
                 />
             </div>
 
-        </div >
+        </div>
     );
 };
 

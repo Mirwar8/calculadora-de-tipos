@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const EmulatorStatusBar = ({ emulatorCore, isPlaying, isPaused }) => {
+const EmulatorStatusBar = ({ isCoreReady, isPlaying, isPaused }) => {
     const [fps, setFps] = useState(60.0);
     const [cpuUsage, setCpuUsage] = useState(12);
     const [speed, setSpeed] = useState(100);
