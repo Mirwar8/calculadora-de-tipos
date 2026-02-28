@@ -26,10 +26,29 @@ const EmulatorScreen = ({ romData, romName, isPlaying, isPaused, volume, onPlayP
 
     // Initial Engine Start
     useEffect(() => {
-        initEngine().catch(err => {
-            console.error('Core init failed:', err);
-            setLoadError('Failed to load emulator core: ' + err.message);
-        });
+        let isMounted = true;
+        const init = async () => {
+            try {
+                // Add a small delay to ensure DOM is ready on mobile
+                await new Promise(r => setTimeout(r, 500));
+                if (!isMounted) return;
+                
+                await initEngine();
+                
+                // Final safety check: if we are not isolated, WASM workers will fail
+                if (!window.crossOriginIsolated) {
+                    console.warn('[Screen] Environment not Cross-Origin Isolated. WASM might fail.');
+                    // Don't error out yet, some builds might work without it, but log it
+                }
+            } catch (err) {
+                if (isMounted) {
+                    console.error('Core init failed:', err);
+                    setLoadError('Error al iniciar el motor: ' + err.message);
+                }
+            }
+        };
+        init();
+        return () => { isMounted = false; };
     }, [initEngine]);
 
     // Mount persistent canvas
@@ -242,7 +261,12 @@ const EmulatorScreen = ({ romData, romName, isPlaying, isPaused, volume, onPlayP
                                 {(isCoreLoading || !isCoreReady || isRomLoading) && !loadError && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm z-30">
                                         <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">{isRomLoading ? 'Loading Game...' : 'Initialazing Engine...'}</p>
+                                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">{isRomLoading ? 'Cargando Juego...' : 'Iniciando Motor...'}</p>
+                                        {!window.crossOriginIsolated && !isRomLoading && (
+                                            <p className="text-orange-400 text-[10px] mt-2 max-w-[200px] text-center leading-tight">
+                                                Aislamiento COOP/COEP no detectado. Si estás en móvil, usa Chrome o Safari directamente (no desde apps como Instagram o WhatsApp).
+                                            </p>
+                                        )}
                                     </div>
                                 )}
 
