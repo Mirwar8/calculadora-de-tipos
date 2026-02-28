@@ -49,26 +49,29 @@ export const EmulatorProvider = ({ children }) => {
             try {
                 console.log('--- [Context] Starting mGBA Singleton Engine ---');
                 
-                // Create a timeout promise
+                // Create a timeout promise (30s for mobile)
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Engine initialization timed out (15s)')), 15000)
+                    setTimeout(() => reject(new Error('Engine initialization timed out (30s)')), 30000)
                 );
 
+                console.log('[Context] Instantiating mGBA...');
                 // Race the engine init against the timeout
                 const core = await Promise.race([
                     mGBA({ 
                         canvas: canvasElement,
-                        // Use a dummy element to absorb mGBA's internal keyboard listeners
                         keyboardListeningElement: document.createElement('div'), 
                         locateFile: (path) => {
-                            if (path.endsWith('.wasm')) return '/mgba.wasm';
-                            return path;
+                            const url = path.endsWith('.wasm') ? '/mgba.wasm' : path;
+                            console.log(`[Context] Loading: ${url}`);
+                            return url;
                         }
                     }),
                     timeoutPromise
                 ]);
                 
+                console.log('[Context] FSInit starting...');
                 await core.FSInit();
+                console.log('[Context] FSInit complete.');
                 
                 // Add helper methods
                 core.setFastForward = (active) => {
