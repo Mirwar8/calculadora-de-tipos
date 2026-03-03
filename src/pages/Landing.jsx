@@ -49,37 +49,74 @@ const Landing = () => {
     return (
         <div className="min-h-screen">
             {/* Hero Section */}
-            <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-blue-500/10 dark:from-primary/20 dark:via-background-dark dark:to-blue-500/20">
+            <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-blue-500/10 dark:from-primary/20 dark:via-background-dark dark:to-blue-500/20 w-full">
                 <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40">
-                    <div className="text-center space-y-8">
-                        <div className="space-y-4">
-                            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white">
-                                Master Pokémon
-                                <span className="block text-primary">Type Mechanics</span>
-                            </h1>
-                            <p className="text-xl sm:text-2xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                                The ultimate tool for competitive trainers. Calculate type effectiveness, 
-                                analyze team coverage, and dominate every battle.
-                            </p>
+                <div className="relative w-full mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32" style={{ maxWidth: 'min(95vw, 1400px)' }}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        {/* Left Column - Text & CTAs */}
+                        <div className="space-y-8 text-center lg:text-left">
+                            <div className="space-y-4">
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.1]">
+                                    Master Pokémon
+                                    <span className="block text-primary">Type Mechanics</span>
+                                </h1>
+                                <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                                    The ultimate tool for competitive trainers. Calculate type effectiveness, 
+                                    analyze team coverage, and dominate every battle.
+                                </p>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">
+                                <Link
+                                    to="/calculator"
+                                    className="group inline-flex items-center gap-3 bg-primary text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/30 touch-target"
+                                >
+                                    <span className="material-symbols-outlined">calculate</span>
+                                    Start Calculating
+                                    <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                </Link>
+                                <Link
+                                    to="/pokedex"
+                                    className="group inline-flex items-center gap-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-8 py-4 rounded-full font-bold text-lg border-2 border-slate-200 dark:border-slate-600 hover:border-primary transition-all touch-target"
+                                >
+                                    <span className="material-symbols-outlined">menu_book</span>
+                                    Browse Pokédex
+                                </Link>
+                            </div>
                         </div>
-                        
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                            <Link
-                                to="/calculator"
-                                className="group inline-flex items-center gap-3 bg-primary text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/30 touch-target"
-                            >
-                                <span className="material-symbols-outlined">calculate</span>
-                                Start Calculating
-                                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                            </Link>
-                            <Link
-                                to="/pokedex"
-                                className="group inline-flex items-center gap-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-8 py-4 rounded-full font-bold text-lg border-2 border-slate-200 dark:border-slate-600 hover:border-primary transition-all touch-target"
-                            >
-                                <span className="material-symbols-outlined">menu_book</span>
-                                Browse Pokédex
-                            </Link>
+
+                        {/* Right Column - Stats & Visual */}
+                        <div className="hidden lg:flex flex-col items-center gap-8">
+                            <div className="grid grid-cols-3 gap-6 w-full max-w-md">
+                                {stats.map((stat, index) => (
+                                    <div key={index} className="text-center p-6 bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                                        <div className="text-3xl xl:text-4xl font-black text-primary mb-1">
+                                            {stat.number}
+                                        </div>
+                                        <div className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                                            {stat.label}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+                                <span className="material-symbols-outlined text-primary animate-pulse">verified</span>
+                                <span className="font-semibold">Trusted by competitive players worldwide</span>
+                            </div>
+                        </div>
+
+                        {/* Mobile Stats - visible only on small screens */}
+                        <div className="lg:hidden grid grid-cols-3 gap-4">
+                            {stats.map((stat, index) => (
+                                <div key={index} className="text-center p-4 bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-white/10">
+                                    <div className="text-2xl sm:text-3xl font-black text-primary">
+                                        {stat.number}
+                                    </div>
+                                    <div className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                                        {stat.label}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -87,7 +124,7 @@ const Landing = () => {
 
             {/* Interactive Demo Section */}
             <section className="py-20 bg-transparent">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center space-y-4 mb-12">
                         <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white">
                             Try It Now
@@ -97,7 +134,7 @@ const Landing = () => {
                         </p>
                     </div>
 
-                    <div className="max-w-4xl mx-auto bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-700">
+                    <div className="w-full max-w-6xl mx-auto bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-700">
                         <div className="space-y-8">
                             <TypeSelector
                                 type1={demoType1}
@@ -120,7 +157,7 @@ const Landing = () => {
 
             {/* Features Grid */}
             <section className="py-24 bg-transparent pt-32">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center space-y-4 mb-20">
                         <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white">
                             Everything You Need to Win
@@ -130,7 +167,7 @@ const Landing = () => {
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <div className="grid md:grid-cols-3 gap-8 lg:gap-12 w-full max-w-7xl mx-auto">
                         {features.map((feature, index) => (
                             <div
                                 key={index}
@@ -159,7 +196,7 @@ const Landing = () => {
 
             {/* Stats Section */}
             <section className="py-24 bg-transparent pt-32">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center space-y-4 mb-20">
                         <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white">
                             Trusted by the Community
@@ -169,7 +206,7 @@ const Landing = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-4xl mx-auto items-center justify-items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-24 w-full max-w-6xl mx-auto items-center justify-items-center">
                         {stats.map((stat, index) => (
                             <div key={index} className="text-center space-y-2">
                                 <div className="text-4xl sm:text-5xl font-black text-primary">
@@ -190,7 +227,7 @@ const Landing = () => {
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/20 rounded-full blur-[100px]" />
                 </div>
-                <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-10 sm:p-14 text-center space-y-7 shadow-2xl">
                         <div className="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 text-primary px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest">
                             <span className="material-symbols-outlined text-base">trophy</span>

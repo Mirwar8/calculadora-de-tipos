@@ -561,7 +561,7 @@ const Pokedex = () => {
 
             <div className="grid gap-2 sm:gap-4 md:gap-5 lg:gap-6 pokemon-grid-container overflow-safe"
                 style={{
-                    gridTemplateColumns: `repeat(auto-fill, minmax(150px, 1fr))`
+                    gridTemplateColumns: `repeat(auto-fill, minmax(200px, 1fr))`
                 }}>
                 {pokemonList.map((pokemon, index) => {
                     // Check if this pokemon is the first of its generation in the current list

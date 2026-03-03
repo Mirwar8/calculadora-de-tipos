@@ -166,7 +166,9 @@ const EmulatorScreen = ({ romData, romName, isPlaying, isPaused, volume, onPlayP
 
     const isGBC = romName && (romName.toLowerCase().endsWith('.gbc') || romName.toLowerCase().endsWith('.gb'));
     const aspectClass = isGBC ? 'aspect-[10/9]' : 'aspect-[3/2]';
-    const dimensionsClass = isFullscreen ? `w-auto h-full ${aspectClass}` : (isGBC ? `w-[320px] h-[288px] max-w-[80vw] ${aspectClass}` : `w-[480px] h-[320px] max-w-[80vw] ${aspectClass}`);
+    const dimensionsClass = isFullscreen 
+        ? `w-auto h-full ${aspectClass}` 
+        : `w-full ${aspectClass}`;
 
     const getMobileControlsMap = (key) => {
         const mgbaKeyMap = {
@@ -237,20 +239,31 @@ const EmulatorScreen = ({ romData, romName, isPlaying, isPaused, volume, onPlayP
             >
                 <div className={`relative transition-all duration-500 ease-in-out ${isFullscreen
                     ? 'w-screen h-screen bg-black flex items-center justify-center p-0'
-                    : 'bg-[#432371] p-6 pb-12 rounded-[2.5rem] shadow-2xl border-b-8 border-r-8 border-[#2d1b4e] flex flex-col items-center gap-2'
+                    : 'gba-shell-body bg-gradient-to-b from-[#5a3a8a] via-[#432371] to-[#3a1d63] p-4 sm:p-6 md:p-8 pb-8 sm:pb-12 md:pb-16 rounded-[2rem] sm:rounded-[2.5rem] shadow-gba-shell flex flex-col items-center gap-2 sm:gap-4 w-full max-w-[1000px] mx-auto'
                     }`}>
 
+                    {/* L/R Shoulder Buttons */}
                     {!isFullscreen && (
-                        <div className="absolute top-4 w-full px-12 flex justify-between opacity-20 pointer-events-none">
-                            <div className="h-1 w-24 bg-white rounded-full"></div>
-                            <div className="h-1 w-24 bg-white rounded-full"></div>
-                        </div>
+                        <>
+                            <div className="absolute -top-3 left-4 sm:left-6 right-4 sm:right-6 flex justify-between pointer-events-none">
+                                <div className="shoulder-button bg-gradient-to-b from-[#6b4a9a] to-[#4a2d7a] text-white/40 text-[9px] font-black tracking-widest px-6 sm:px-8 py-1 rounded-t-lg shadow-md border-t border-white/10">
+                                    L
+                                </div>
+                                <div className="shoulder-button bg-gradient-to-b from-[#6b4a9a] to-[#4a2d7a] text-white/40 text-[9px] font-black tracking-widest px-6 sm:px-8 py-1 rounded-t-lg shadow-md border-t border-white/10">
+                                    R
+                                </div>
+                            </div>
+                            <div className="absolute top-4 w-full px-8 sm:px-12 flex justify-between opacity-10 pointer-events-none">
+                                <div className="h-[2px] w-16 sm:w-24 bg-white rounded-full"></div>
+                                <div className="h-[2px] w-16 sm:w-24 bg-white rounded-full"></div>
+                            </div>
+                        </>
                     )}
 
-                    <div className={`relative bg-[#222] rounded-tl-xl rounded-tr-xl rounded-bl-[2rem] rounded-br-[2rem] shadow-inner overflow-hidden flex flex-col items-center ${isFullscreen ? 'w-full h-full' : 'p-8 pb-10'
+                    <div className={`relative bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] rounded-tl-xl rounded-tr-xl rounded-bl-[2rem] rounded-br-[2rem] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),inset_0_-2px_8px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col items-center ${isFullscreen ? 'w-full h-full' : 'p-4 sm:p-6 md:p-8 pb-6 sm:pb-8 md:pb-10 w-full'
                         }`}>
 
-                        <div className={`relative bg-black transition-all ${isFullscreen ? 'w-full h-full flex items-center justify-center' : 'rounded-md shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] border-[12px] border-[#333]'
+                        <div className={`relative bg-black transition-all ${isFullscreen ? 'w-full h-full flex items-center justify-center' : 'rounded-md shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] border-[8px] sm:border-[12px] border-[#333] w-full'
                             }`}>
 
                             <div className={`bg-black overflow-hidden relative flex justify-center items-center mx-auto ${dimensionsClass}`}>

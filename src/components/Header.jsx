@@ -1,13 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from '../hooks/useTheme';
 import { useUser } from '../context/UserContext';
 import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
-    const { theme } = useTheme();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const menuRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -21,9 +17,6 @@ const Header = () => {
     // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setIsMenuOpen(false);
-            }
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setIsSearchOpen(false);
             }
@@ -77,8 +70,8 @@ const Header = () => {
     };
 
     return (
-        <header className={`border-b border-solid border-slate-200 dark:border-[#233648] bg-white dark:bg-background-dark px-4 sm:px-6 py-3 fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isScrolled ? 'shadow-lg dark:shadow-black/20' : ''}`}>
-            <div className="mx-auto flex items-center justify-between" style={{ maxWidth: 'min(95vw, 1440px)' }}>
+        <header className={`border-b border-solid border-slate-200 dark:border-[#233648] bg-white dark:bg-background-dark px-2 sm:px-6 py-3 fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isScrolled ? 'shadow-lg dark:shadow-black/20' : ''}`}>
+            <div className="mx-auto flex items-center justify-between w-full max-w-[1800px] px-2 sm:px-4 lg:px-8">
                 <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
                     <Link to="/" className="flex items-center space-fluid-4 touch-target">
                         <div className="size-8 text-primary">
@@ -136,7 +129,7 @@ const Header = () => {
                         )}
                     </div>
 
-                    <div className="flex gap-1 sm:gap-2 relative" ref={menuRef}>
+                    <div className="flex gap-1 sm:gap-2 relative">
                         {/* Theme Toggle */}
                         <ThemeToggle />
                         
@@ -156,32 +149,12 @@ const Header = () => {
                             <span className="material-symbols-outlined text-[20px]">menu</span>
                         </button>
 
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        <Link
+                            to="/settings"
                             className="hidden md:flex items-center justify-center rounded-full size-10 bg-slate-100 dark:bg-[#233648] hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-white touch-target"
                         >
-                            <span className="material-symbols-outlined text-[20px] transition-transform duration-500" style={{ transform: isMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>settings</span>
-                        </button>
-
-                        {/* Settings Dropdown */}
-                        {isMenuOpen && (
-                            <div className="absolute top-12 right-0 w-64 bg-white dark:bg-[#192633] border border-slate-200 dark:border-[#324d67] rounded-xl shadow-xl p-4 z-50 animate-fade-in-down" style={{ maxWidth: 'min(calc(100vw - 4rem), 320px)' }}>
-                                <h3 className="text-fluid-sm font-bold text-slate-900 dark:text-white mb-3">Settings</h3>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-fluid-sm text-slate-600 dark:text-[#92adc9] flex items-center space-fluid-2">
-                                        <span className="material-symbols-outlined text-lg">dark_mode</span>
-                                        Dark Mode
-                                    </span>
-                                    {/* Toggle Switch */}
-                                    <button
-                                        onClick={toggleTheme}
-                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out touch-target ${theme === 'dark' ? 'bg-primary' : 'bg-slate-300'}`}
-                                    >
-                                        <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ease-in-out ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                            <span className="material-symbols-outlined text-[20px]">settings</span>
+                        </Link>
 
                         <button
                             onClick={() => setIsEditModalOpen(true)}
@@ -300,6 +273,8 @@ const MobileMenuDrawer = ({ isOpen, onClose, userData }) => {
                         { to: '/calculator', icon: 'calculate', label: 'Type Calculator' },
                         { to: '/pokedex', icon: 'menu_book', label: 'Pokédex' },
                         { to: '/teamBuilder', icon: 'group_work', label: 'Team Builder' },
+                        { to: '/emulator', icon: 'sports_esports', label: 'GBA Emulator' },
+                        { to: '/settings', icon: 'settings', label: 'Configuración' },
                         { to: '#', icon: 'analytics', label: 'Move Analytics' },
                         { to: '#', icon: 'bolt', label: 'Damage Calc' },
                         { to: '#', icon: 'history', label: 'Recent Lookups' }

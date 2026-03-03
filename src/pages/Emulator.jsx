@@ -83,8 +83,8 @@ const Emulator = () => {
     }, [closeGame]);
 
     return (
-        <div className="w-full h-[calc(100vh-12rem)] flex items-center justify-center overflow-hidden">
-            <div className="w-full max-w-4xl px-4 flex flex-col items-center">
+        <div className="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center py-4">
+            <div className="w-full max-w-[1400px] px-2 sm:px-4 lg:px-8 flex flex-col items-center">
 
                 {!romData ? (
                     <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-8 max-w-2xl mx-auto">

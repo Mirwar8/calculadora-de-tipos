@@ -35,6 +35,7 @@ const PokemonDetail = () => {
     const [addFeedback, setAddFeedback] = useState(null);
     const [gender, setGender] = useState('male'); // 'male' or 'female'
     const [volume, setVolume] = useState(0.5); // Default 50%
+    const [isShiny, setIsShiny] = useState(false); // Shiny mode toggle
 
     useEffect(() => {
         let isMounted = true;
@@ -273,9 +274,27 @@ const PokemonDetail = () => {
             const genSprites = pokemon.sprites.versions?.[config.gen];
             const gameSprites = genSprites?.[config.game];
             if (gameSprites) {
+                // Shiny priority
+                if (isShiny) {
+                    const shinySprite = isFemale 
+                        ? (gameSprites.front_shiny_female || gameSprites.front_shiny) 
+                        : gameSprites.front_shiny;
+                    if (shinySprite) return shinySprite;
+                }
                 const sprite = isFemale ? (gameSprites.front_female || gameSprites.front_default) : gameSprites.front_default;
                 if (sprite) return sprite;
             }
+        }
+
+        // Shiny fallback for modern sprites
+        if (isShiny) {
+            const shinyArt = pokemon.sprites.other?.['official-artwork']?.front_shiny;
+            const shinyHome = pokemon.sprites.other?.home?.front_shiny;
+            const shinyDefault = pokemon.sprites.front_shiny;
+            if (isFemale) {
+                return pokemon.sprites.other?.home?.front_shiny_female || shinyHome || shinyArt || shinyDefault || '';
+            }
+            return shinyArt || shinyHome || shinyDefault || '';
         }
 
         // Home or Official Artwork
@@ -327,12 +346,12 @@ const PokemonDetail = () => {
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
                     {/* LEFT COLUMN */}
                     <div className="lg:col-span-7 flex flex-col space-fluid-6">
-                        <div className="bg-white dark:bg-slate-300 p-4 sm:p-6 rounded-bl-[4rem] rounded-tl-xl rounded-tr-xl rounded-br-xl shadow-inner-heavy relative overflow-safe">
-                            <div className="bg-dex-dark-screen rounded-lg p-1 shadow-lg ring-4 ring-gray-400/50">
-                                <div className="bg-gray-900 rounded border-2 border-gray-700 relative overflow-hidden aspect-[4/3] flex items-center justify-center">
+                        <div className="bg-white dark:bg-slate-300 p-4 sm:p-6 rounded-bl-[4rem] rounded-tl-xl rounded-tr-xl rounded-br-xl shadow-inner-heavy relative overflow-hidden">
+                            <div className="bg-dex-dark-screen rounded-bl-[3rem] rounded-tl-lg rounded-tr-lg rounded-br-lg p-1 sm:p-2 shadow-lg ring-4 ring-gray-400/50">
+                                <div className="bg-gray-900 rounded-bl-[2.5rem] rounded-tl rounded-tr rounded-br border-2 border-gray-700 relative overflow-hidden aspect-[4/3] flex items-center justify-center">
                                     <div className="absolute inset-0 scanlines opacity-20 pointer-events-none z-10"></div>
                                     <img
                                         src={getSprite()}
@@ -372,7 +391,7 @@ const PokemonDetail = () => {
                             </div>
 
                             {/* Vital Specs Panel */}
-                            <div className="bg-black/60 backdrop-blur-xl rounded-xl p-5 sm:p-8 border-2 border-white/20 shadow-2xl overflow-safe mb-8">
+                            <div className="bg-black/60 backdrop-blur-xl rounded-xl p-5 sm:p-8 border-2 border-white/20 shadow-2xl overflow-hidden mt-8">
                                 <h3 className="text-white text-2xl font-black uppercase tracking-widest mb-6 flex items-center gap-3 border-b-2 border-white/10 pb-3">
                                     <span className="material-symbols-outlined text-3xl text-cyan-400">info</span> {language === 'es' ? 'Datos Biológicos' : 'Biological Data'}
                                 </h3>
@@ -462,7 +481,7 @@ const PokemonDetail = () => {
                         </div>
 
                         {/* Stats Panel */}
-                        <div className="bg-black/40 backdrop-blur-xl rounded-xl p-5 sm:p-8 border-2 border-white/20 shadow-2xl overflow-safe mb-8">
+                        <div className="bg-black/40 backdrop-blur-xl rounded-xl p-5 sm:p-8 border-2 border-white/20 shadow-2xl overflow-hidden">
                             <h3 className="text-white text-2xl font-black uppercase tracking-widest mb-6 flex items-center gap-3 border-b-2 border-white/10 pb-3">
                                 <span className="material-symbols-outlined text-3xl text-cyan-400">bar_chart</span> {language === 'es' ? 'Estadísticas Base' : 'Base Stats'}
                             </h3>
@@ -483,7 +502,7 @@ const PokemonDetail = () => {
                         </div>
 
                         {/* Control Deck */}
-                        <div className="grid grid-cols-2 gap-4 mt-auto">
+                        <div className="grid grid-cols-3 gap-3 mt-auto">
                             <div className="bg-black/20 p-1.5 rounded-lg flex items-center gap-1 shadow-bevel-pressed overflow-safe">
                                 <button
                                     onClick={() => setLanguage('en')}
@@ -496,6 +515,24 @@ const PokemonDetail = () => {
                                     className={`flex-1 py-1.5 rounded text-fluid-xs font-bold transition-all touch-target ${language === 'es' ? 'bg-primary text-white shadow-md' : 'text-blue-300'}`}
                                 >
                                     ESP
+                                </button>
+                            </div>
+
+                            {/* Shiny Toggle */}
+                            <div className="bg-black/20 p-1.5 rounded-lg flex items-center gap-1 shadow-bevel-pressed overflow-hidden">
+                                <button
+                                    onClick={() => setIsShiny(false)}
+                                    className={`flex-1 py-1.5 rounded text-fluid-xs font-bold transition-all touch-target flex items-center justify-center gap-1 ${!isShiny ? 'bg-primary text-white shadow-md' : 'text-blue-300'}`}
+                                >
+                                    <span className="material-symbols-outlined text-sm">palette</span>
+                                    <span className="hidden sm:inline">Normal</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsShiny(true)}
+                                    className={`flex-1 py-1.5 rounded text-fluid-xs font-bold transition-all touch-target flex items-center justify-center gap-1 ${isShiny ? 'bg-yellow-500 text-white shadow-md' : 'text-blue-300'}`}
+                                >
+                                    <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                                    <span className="hidden sm:inline">Shiny</span>
                                 </button>
                             </div>
 
